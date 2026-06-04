@@ -1,7 +1,7 @@
 ---
-title: "Sample Project"
+title: "Moss 2D Game Framework"
 description: "A brief description of the project and what it does"
-tech: ["React", "TypeScript", "Node.js", "PostgreSQL"]
+tech: ["C", "SDL3"]
 liveUrl: "https://example.com"
 sourceUrl: "https://github.com/username/project"
 weight: 1

@@ -1,105 +1,88 @@
 {{ $projects := sort (where .Site.RegularPages "Section" "projects") "Params.weight" "asc" }}
-<section class="not-prose mb-3 hero-top flex flex-col items-center">
-  {{ $lazy := site.Params.enableImageLazyLoading | default true }}
-  {{ $altText := (site.Language.Params.Author.name | default "Author") }}
-  {{ with site.Language.Params.Author.image }}
+<div class="hero-about-row hero-top">
+  <section class="hero-col not-prose flex flex-col items-center">
+    {{ $lazy := site.Params.enableImageLazyLoading | default true }}
+    {{ $altText := (site.Language.Params.Author.name | default "Author") }}
+    {{ with site.Language.Params.Author.image }}
     {{ $authorImage := resources.Get . }}
     {{ if $authorImage }}
-      {{ $imgClass := "mb-2 h-auto w-36 rounded-full" }}
-      {{ $webp := site.Params.enableImageWebp | default true }}
-      {{ partial "picture.html" (dict "img" $authorImage "alt" $altText "class" $imgClass "lazy" $lazy "webp" $webp) }}
+    {{ $imgClass := "profile-img mb-2 h-auto rounded-full" }}
+    {{ $webp := site.Params.enableImageWebp | default true }}
+    {{ partial "picture.html" (dict "img" $authorImage "alt" $altText "class" $imgClass "lazy" $lazy "webp" $webp) }}
     {{ end }}
-  {{ end }}
-  <h1 class="text-4xl font-extrabold">
-    {{ site.Language.Params.Author.name | default site.Title }}
-  </h1>
-  {{ with site.Language.Params.Author.headline }}
+    {{ end }}
+    <h1 class="text-4xl font-extrabold">
+      {{ site.Language.Params.Author.name | default site.Title }}
+    </h1>
+    {{ with site.Language.Params.Author.headline }}
     <h2 class="text-xl text-neutral-500 dark:text-neutral-400">
       {{ . | markdownify | emojify }}
     </h2>
-  {{ end }}
-  <div class="mt-1 text-2xl">
-    {{ partialCached "author-links.html" . }}
-  </div>
-</section>
+    {{ end }}
+    <div class="mt-1 text-2xl">
+      {{ partialCached "author-links.html" . }}
+    </div>
+  </section>
 
-{{ if .Content }}
-<section id="about" class="section-gap section-scroll text-center">
-  <h2 class="mb-6 section-heading">About</h2>
-  <div class="prose dark:prose-invert text-start">{{ .Content | emojify }}</div>
-</section>
-{{ end }}
+  {{ if .Content }}
+  <section id="about" class="about-col section-scroll">
+    <h2 class="mb-6 section-heading">About</h2>
+    <div class="prose dark:prose-invert">{{ .Content | emojify }}</div>
+  </section>
+  {{ end }}
+</div>
 
 <section id="projects" class="section-gap section-scroll">
   <h2 class="mb-8 text-center section-heading">Projects</h2>
   {{ if $projects }}
-    <div class="project-grid">
-      {{ range $projects }}
-        {{ $cover := .Resources.GetMatch "{cover*,*feature*}" }}
-        <div class="project-card" onclick="document.getElementById('project-{{ .File.ContentBaseName }}').showModal()">
-          {{ if $cover }}
-            {{ $thumb := $cover.Fill "600x400" }}
-            <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
-          {{ end }}
-          <div class="project-card-body">
-            <h3 class="project-card-title">{{ .Title }}</h3>
-            {{ with .Params.description }}
-              <p class="project-card-desc">{{ . }}</p>
-            {{ end }}
-            {{ with .Params.tech }}
-              <div class="project-tech">
-                {{ range . }}
-                  <span class="project-tech-tag">{{ . }}</span>
-                {{ end }}
-              </div>
-            {{ end }}
-          </div>
-        </div>
+  <div class="project-grid">
+    {{ range $projects }}
+    {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
+    <a href="{{ .RelPermalink }}" class="project-card no-underline">
+      {{ if $cover }}
+      {{ $thumb := $cover.Fill "600x338" }}
+      <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
       {{ end }}
-    </div>
+      <div class="project-card-body">
+        <h3 class="project-card-title">{{ .Title }}</h3>
+        {{ with .Params.description }}
+        <p class="project-card-desc">{{ . }}</p>
+        {{ end }}
+        {{ with .Params.tech }}
+        <div class="project-tech">
+          {{ range . }}
+          <span class="project-tech-tag">{{ . }}</span>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+    </a>
+    {{ end }}
+  </div>
   {{ else }}
-    <p class="text-center text-neutral-500 dark:text-neutral-400">
-      Projects coming soon — add markdown files to <code>content/projects/</code>.
-    </p>
+  <p class="text-center text-neutral-500 dark:text-neutral-400">
+    Projects coming soon — add markdown files to <code>content/projects/</code>.
+  </p>
   {{ end }}
 </section>
 
 <section id="contact" class="section-gap section-bottom section-scroll">
   <h2 class="mb-6 text-center section-heading">Contact</h2>
-  <div class="flex flex-col items-center" style="gap: 1rem;">
+  <div class="flex flex-col items-center" style="gap: 1.5rem;">
     <p class="text-neutral-600 dark:text-neutral-400">
-      Let's connect.
+      Looking forward to our next collaboration.
     </p>
-    {{ partial "author-links.html" . }}
+    <div class="flex flex-wrap justify-center gap-6 contact-icons">
+      <a href="/resume.pdf" target="_blank" rel="noopener noreferrer" class="contact-link" aria-label="Resume">{{
+        partial "icon.html" "document-text" }}</a>
+      {{ with site.Language.Params.Author.links }}
+      {{ range $links := . }}
+      {{ range $name, $url := $links }}
+      <a href="{{ $url | safeURL }}" target="_blank" rel="me noopener noreferrer" class="contact-link"
+        aria-label="{{ $name | title }}">{{ partial "icon.html" $name }}</a>
+      {{ end }}
+      {{ end }}
+      {{ end }}
+    </div>
   </div>
 </section>
-
-{{ range $projects }}
-  <dialog id="project-{{ .File.ContentBaseName }}" class="project-dialog">
-    <div class="project-dialog-content">
-      <button onclick="this.closest('dialog').close()" class="dialog-close">&times;</button>
-      <h2 class="project-dialog-title">{{ .Title }}</h2>
-      {{ with .Params.description }}
-        <p class="project-dialog-desc">{{ . }}</p>
-      {{ end }}
-      {{ with .Params.tech }}
-        <div class="project-tech">
-          {{ range . }}
-            <span class="project-tech-tag">{{ . }}</span>
-          {{ end }}
-        </div>
-      {{ end }}
-      <div class="project-dialog-body prose dark:prose-invert">
-        {{ .Content }}
-      </div>
-      <div class="project-dialog-links">
-        {{ with .Params.liveUrl }}
-          <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-primary">Live Demo</a>
-        {{ end }}
-        {{ with .Params.sourceUrl }}
-          <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-secondary">Source Code</a>
-        {{ end }}
-      </div>
-    </div>
-  </dialog>
-{{ end }}

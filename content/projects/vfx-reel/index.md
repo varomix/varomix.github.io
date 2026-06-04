@@ -1,7 +1,7 @@
 ---
-title: "iPad Compositor"
+title: "VFX Houdini Reel"
 description: "A brief description of the project and what it does"
-tech: ["Swift", "OpenUSD", "C++"]
+tech: ["Houdini", "VFX", "Python"]
 liveUrl: "https://example.com"
 sourceUrl: "https://github.com/username/project"
 weight: 1
@@ -14,8 +14,8 @@ This is where you write the full details about your project. This content will a
 ### Key features
 
 - Feature one
-- Feature two
-- Feature three
+- ## Jumanji Reel
+{{< vimeo 260508986 >}}
 
 ### What I learned
 

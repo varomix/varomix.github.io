@@ -1,7 +1,7 @@
 ---
-title: "Sample Project"
+title: "Mixel 2D/3D Game Framework"
 description: "A brief description of the project and what it does"
-tech: ["React", "TypeScript", "Node.js", "PostgreSQL"]
+tech: ["Odin", "C", "C++", "SDL3"]
 liveUrl: "https://example.com"
 sourceUrl: "https://github.com/username/project"
 weight: 1

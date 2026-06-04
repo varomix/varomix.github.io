@@ -1,7 +1,7 @@
 ---
-title: "Sample Project"
+title: "CAD Application"
 description: "A brief description of the project and what it does"
-tech: ["React", "TypeScript", "Node.js", "PostgreSQL"]
+tech: ["C", "UI"]
 liveUrl: "https://example.com"
 sourceUrl: "https://github.com/username/project"
 weight: 1

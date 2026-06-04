@@ -7,9 +7,10 @@ title = 'Varo Castaneda'
 [params.author]
 name = "Varo Castaneda"
 image = "img/varo.jpg"
-headline = "Software Engineer - Technical Artist"
-bio = "A little bit about me"
+headline = "Software Engineer | Technical Artist"
+bio = "I like Pixel Tacos!"
 links = [
+    { email = "mailto:varomix@varomix.net" },
     { linkedin = "https://www.linkedin.com/in/varomix" },
     { github = "https://www.github.com/varomix" },
     { youtube = "https://www.youtube.com/watch?v=XU5LCUP25RY" },

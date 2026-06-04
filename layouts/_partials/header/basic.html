@@ -4,13 +4,9 @@
       {{ partial "logo.html" . }}
     </div>
     <div class="nav-links">
-      {{ if .IsHome }}
-        <a href="#about" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">About</a>
-        <a href="#projects" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Projects</a>
-        <a href="#contact" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Contact</a>
-      {{ else }}
-        <a href="/" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Home</a>
-      {{ end }}
+      <a href="/#about" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">About</a>
+      <a href="/#projects" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Projects</a>
+      <a href="/#contact" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Contact</a>
       <a
         href="/resume.pdf"
         target="_blank"

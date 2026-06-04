@@ -23,23 +23,46 @@ body {
   background: rgb(var(--color-primary-500));
 }
 
+.no-underline {
+  text-decoration: none;
+}
+
 .section-heading {
   font-size: 1.875rem;
   font-weight: 800;
 }
 
-#about {
-  max-width: 56rem;
-  margin-left: auto;
-  margin-right: auto;
+.profile-img {
+  width: 12rem;
 }
 
-#about .prose {
+.about-col .prose {
   max-width: none;
 }
 
 .hero-top {
   margin-top: 7rem;
+}
+
+.hero-about-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+@media (min-width: 768px) {
+  .hero-about-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .hero-col {
+    flex: 0 0 auto;
+  }
+
+  .about-col {
+    flex: 1 1 0%;
+  }
 }
 
 .section-gap {
@@ -78,7 +101,9 @@ body {
 }
 
 .project-card {
+  display: block;
   cursor: pointer;
+  color: inherit;
   border-radius: 0.75rem;
   border: 1px solid rgb(var(--color-neutral-200));
   background: rgb(var(--color-neutral-50));
@@ -95,6 +120,7 @@ body {
 .project-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
 }
 
 .dark .project-card:hover {
@@ -102,9 +128,8 @@ body {
 }
 
 .project-card-image {
-  aspect-ratio: 16 / 9;
   width: 100%;
-  object-fit: cover;
+  display: block;
 }
 
 .project-card-body {
@@ -269,4 +294,28 @@ body {
 
 .dark .btn-secondary:hover {
   background: rgb(var(--color-neutral-700));
+}
+
+.contact-link {
+  color: rgb(var(--color-neutral-400));
+  transition: color 0.15s, transform 0.15s;
+  will-change: transform;
+}
+
+.contact-link:hover {
+  color: rgb(var(--color-primary-600));
+  transform: scale(1.1);
+}
+
+.contact-link svg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.dark .contact-link {
+  color: rgb(var(--color-neutral-500));
+}
+
+.dark .contact-link:hover {
+  color: rgb(var(--color-primary-400));
 }

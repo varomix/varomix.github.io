@@ -3,7 +3,7 @@ title: "Flash Like Application"
 description: "A brief description of the project and what it does"
 tech: ["C", "SDF", "Node.js", "PostgreSQL"]
 sourceUrl: "https://github.com/username/project"
-weight: 1
+weight: 0.2
 ---
 
 ## About this project

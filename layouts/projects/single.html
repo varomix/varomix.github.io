@@ -1,0 +1,49 @@
+{{ define "main" }}
+  {{- $images := .Resources.ByType "image" }}
+  {{- $cover := $images.GetMatch (.Params.cover | default "*cover*") }}
+  {{- $feature := $images.GetMatch (.Params.feature | default "*feature*") | default $cover }}
+  <article>
+    <header>
+      <a
+        href="/#projects"
+        class="mb-6 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+        style="text-decoration: none;"
+      >&larr; Back to Projects</a>
+      <h1 class="mt-2 mb-6 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
+        {{ .Title | emojify }}
+      </h1>
+      {{ with .Params.description }}
+        <p class="mb-4 text-lg text-neutral-500 dark:text-neutral-400">{{ . }}</p>
+      {{ end }}
+      {{ with .Params.tech }}
+        <div class="mb-6 flex flex-wrap gap-2">
+          {{ range . }}
+            <span class="rounded-full px-3 py-1 text-sm font-medium project-tech-tag">{{ . }}</span>
+          {{ end }}
+        </div>
+      {{ end }}
+      {{ with $feature }}
+        <div class="mb-8">
+          {{ $altText := $.Params.featureAlt | default $.Params.coverAlt | default "" }}
+          {{ $class := "rounded-md w-full" }}
+          {{ $webp := $.Page.Site.Params.enableImageWebp | default true }}
+          {{ partial "picture.html" (dict "img" . "alt" $altText "class" $class "lazy" false "webp" $webp) }}
+        </div>
+      {{ end }}
+      <div class="mb-8 flex gap-4">
+        {{ with .Params.liveUrl }}
+          <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-primary">Live Demo</a>
+        {{ end }}
+        {{ with .Params.sourceUrl }}
+          <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-secondary">Source Code</a>
+        {{ end }}
+      </div>
+    </header>
+    <section class="prose mt-0 max-w-full dark:prose-invert">
+      {{ .Content | emojify }}
+    </section>
+    <footer class="pt-8 print:hidden">
+      {{ partial "author.html" . }}
+    </footer>
+  </article>
+{{ end }}
