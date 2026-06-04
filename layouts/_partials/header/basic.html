@@ -1,0 +1,22 @@
+<header class="sticky top-0 z-50 w-full bg-neutral/85 py-3 text-sm font-semibold text-neutral-900 backdrop-blur dark:bg-neutral-800/85 dark:text-neutral print:hidden">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 sm:px-14 md:px-24 lg:px-32">
+    <div class="flex flex-row items-center">
+      {{ partial "logo.html" . }}
+    </div>
+    <div class="nav-links">
+      {{ if .IsHome }}
+        <a href="#about" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">About</a>
+        <a href="#projects" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Projects</a>
+        <a href="#contact" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Contact</a>
+      {{ else }}
+        <a href="/" class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2">Home</a>
+      {{ end }}
+      <a
+        href="/resume.pdf"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="resume-btn"
+      >Resume</a>
+    </div>
+  </nav>
+</header>

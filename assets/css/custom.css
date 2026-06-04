@@ -1,0 +1,272 @@
+body {
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.resume-btn {
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgb(var(--color-primary-600));
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.resume-btn:hover {
+  background: rgb(var(--color-primary-500));
+}
+
+.section-heading {
+  font-size: 1.875rem;
+  font-weight: 800;
+}
+
+#about {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#about .prose {
+  max-width: none;
+}
+
+.hero-top {
+  margin-top: 7rem;
+}
+
+.section-gap {
+  margin-top: 6rem;
+}
+
+.section-bottom {
+  margin-bottom: 6rem;
+}
+
+.section-scroll {
+  scroll-margin-top: 6rem;
+}
+
+.project-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .project-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .project-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.project-card {
+  cursor: pointer;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(var(--color-neutral-200));
+  background: rgb(var(--color-neutral-50));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+
+.dark .project-card {
+  border-color: rgb(var(--color-neutral-700));
+  background: rgba(63, 63, 70, 0.5);
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dark .project-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.project-card-image {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  object-fit: cover;
+}
+
+.project-card-body {
+  padding: 1.25rem;
+}
+
+.project-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.project-card-desc {
+  margin-top: 0.5rem;
+  color: rgb(var(--color-neutral-500));
+}
+
+.dark .project-card-desc {
+  color: rgb(var(--color-neutral-400));
+}
+
+.project-tech {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.project-tech-tag {
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgb(var(--color-primary-100));
+  color: rgb(var(--color-primary-700));
+}
+
+.dark .project-tech-tag {
+  background: rgba(var(--color-primary-900), 0.3);
+  color: rgb(var(--color-primary-300));
+}
+
+.project-dialog {
+  width: 100%;
+  max-width: 42rem;
+  border-radius: 1rem;
+  border: none;
+  padding: 0;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: rgb(var(--color-neutral-900));
+}
+
+.dark .project-dialog {
+  background: rgb(var(--color-neutral-800));
+  color: rgb(var(--color-neutral));
+}
+
+.project-dialog-content {
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .project-dialog-content {
+    padding: 2rem;
+  }
+}
+
+.project-dialog-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding-right: 2rem;
+}
+
+.project-dialog-desc {
+  margin-top: 0.5rem;
+  font-size: 1.125rem;
+  color: rgb(var(--color-neutral-500));
+}
+
+.dark .project-dialog-desc {
+  color: rgb(var(--color-neutral-400));
+}
+
+.project-dialog-body {
+  margin-top: 1.5rem;
+}
+
+.project-dialog-links {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.dialog-close {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  background: rgb(var(--color-neutral-200));
+  color: rgb(var(--color-neutral-600));
+}
+
+.dark .dialog-close {
+  background: rgb(var(--color-neutral-700));
+  color: rgb(var(--color-neutral-300));
+}
+
+.dialog-close:hover {
+  background: rgb(var(--color-neutral-300));
+}
+
+.dark .dialog-close:hover {
+  background: rgb(var(--color-neutral-600));
+}
+
+.btn-primary {
+  display: inline-block;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: rgb(var(--color-primary-600));
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: rgb(var(--color-primary-500));
+}
+
+.btn-secondary {
+  display: inline-block;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--color-neutral-300));
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  color: rgb(var(--color-neutral-700));
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.dark .btn-secondary {
+  border-color: rgb(var(--color-neutral-600));
+  color: rgb(var(--color-neutral-300));
+}
+
+.btn-secondary:hover {
+  background: rgb(var(--color-neutral-100));
+}
+
+.dark .btn-secondary:hover {
+  background: rgb(var(--color-neutral-700));
+}

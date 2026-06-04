@@ -1,0 +1,75 @@
+{{ define "main" }}
+  <header>
+    <h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">Projects</h1>
+  </header>
+  {{ if .Content }}
+    <section class="prose mt-4 max-w-prose dark:prose-invert">
+      {{ .Content | emojify }}
+    </section>
+  {{ end }}
+  {{ if .Pages }}
+    <section class="mt-8">
+      <div class="project-grid">
+        {{ $sorted := sort .Pages "Params.weight" "asc" }}
+        {{ range $sorted }}
+          {{ $cover := .Resources.GetMatch "{cover*,*feature*}" }}
+          <div class="project-card" onclick="document.getElementById('project-{{ .File.ContentBaseName }}').showModal()">
+            {{ if $cover }}
+              {{ $thumb := $cover.Fill "600x400" }}
+              <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
+            {{ end }}
+            <div class="project-card-body">
+              <h3 class="project-card-title">{{ .Title }}</h3>
+              {{ with .Params.description }}
+                <p class="project-card-desc">{{ . }}</p>
+              {{ end }}
+              {{ with .Params.tech }}
+                <div class="project-tech">
+                  {{ range . }}
+                    <span class="project-tech-tag">{{ . }}</span>
+                  {{ end }}
+                </div>
+              {{ end }}
+            </div>
+          </div>
+        {{ end }}
+      </div>
+    </section>
+    {{ partial "pagination.html" . }}
+  {{ else }}
+    <section class="prose mt-10 dark:prose-invert">
+      <p class="border-t py-8">
+        <em>No projects yet.</em>
+      </p>
+    </section>
+  {{ end }}
+  {{ range sort .Pages "Params.weight" "asc" }}
+    <dialog id="project-{{ .File.ContentBaseName }}" class="project-dialog">
+      <div class="project-dialog-content">
+        <button onclick="this.closest('dialog').close()" class="dialog-close">&times;</button>
+        <h2 class="project-dialog-title">{{ .Title }}</h2>
+        {{ with .Params.description }}
+          <p class="project-dialog-desc">{{ . }}</p>
+        {{ end }}
+        {{ with .Params.tech }}
+          <div class="project-tech">
+            {{ range . }}
+              <span class="project-tech-tag">{{ . }}</span>
+            {{ end }}
+          </div>
+        {{ end }}
+      <div class="project-dialog-body prose dark:prose-invert">
+        {{ .Content }}
+      </div>
+        <div class="project-dialog-links">
+          {{ with .Params.liveUrl }}
+            <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-primary">Live Demo</a>
+          {{ end }}
+          {{ with .Params.sourceUrl }}
+            <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-secondary">Source Code</a>
+          {{ end }}
+        </div>
+      </div>
+    </dialog>
+  {{ end }}
+{{ end }}
