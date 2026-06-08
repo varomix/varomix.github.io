@@ -5,6 +5,7 @@ title = 'Varo Castaneda'
 
 
 [params]
+  colorScheme = "avocado"
   defaultAppearance = "dark"
   autoSwitchAppearance = false
 
