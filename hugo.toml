@@ -1,5 +1,5 @@
 theme = "congo"
-baseURL = 'https://varomix.net/'
+baseURL = 'https://varomix.github.io/'
 locale = 'en-us'
 title = 'Varo Castaneda'
 
