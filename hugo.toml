@@ -15,3 +15,7 @@ links = [
     { github = "https://www.github.com/varomix" },
     { youtube = "https://www.youtube.com/watch?v=XU5LCUP25RY" },
 ]
+
+[caches]
+[caches.images]
+dir = ':cacheDir/images'

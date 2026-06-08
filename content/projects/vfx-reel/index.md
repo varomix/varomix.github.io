@@ -1,22 +1,27 @@
 ---
 title: "VFX Houdini Reel"
-description: "A brief description of the project and what it does"
+description: "Demo reel with the FX I did for Jumanji:Welcome to the jungle and Dogma Series"
 tech: ["Houdini", "VFX", "Python"]
-liveUrl: "https://example.com"
-sourceUrl: "https://github.com/username/project"
 weight: 1
 ---
 
 ## About this project
+VFX Demo Reel.
 
-This is where you write the full details about your project. This content will appear in the modal when someone clicks on the project card.
-
-### Key features
-
-- Feature one
-- ## Jumanji Reel
+- ## VFX Demo reel
 {{< vimeo 260508986 >}}
 
-### What I learned
+Demo reel with the FX I did for Jumanji:Welcome to the jungle and Dogma Series
 
-A paragraph about what you learned from building this project. Any markdown content here will be rendered inside the project detail modal.
+Thanks for watching
+
+Breakdown available upon request.
+
+Special thanks to:
+Ollin VFX
+Cluster Studio
+Quix
+Luis Montemayor
+MaliArts
+Isotropix
+3D World Magazine
