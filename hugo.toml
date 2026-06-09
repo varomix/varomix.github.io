@@ -5,23 +5,23 @@ title = 'Varo Castaneda'
 
 
 [params]
-  colorScheme = "avocado"
-  defaultAppearance = "dark"
-  autoSwitchAppearance = false
+colorScheme = "avocado"
+defaultAppearance = "dark"
+autoSwitchAppearance = false
 
 [params.homepage]
-  layout = "profile"
+layout = "profile"
 
 [params.author]
 name = "Varo Castaneda"
 image = "img/varo.jpg"
-headline = "Software Engineer | Technical Artist"
-bio = "I like Pixel Tacos!"
+headline = "Software Engineer — Graphics & Creative Tools"
+bio = "Technical Artist at Meta Reality Labs, where I built production tools, workflow automation systems, and AI-assisted content validation pipelines."
 links = [
-    { email = "mailto:varomix@varomix.net" },
-    { linkedin = "https://www.linkedin.com/in/varomix" },
-    { github = "https://www.github.com/varomix" },
-    { youtube = "https://www.youtube.com/watch?v=XU5LCUP25RY" },
+  { email = "mailto:varomix@varomix.net" },
+  { linkedin = "https://www.linkedin.com/in/varomix" },
+  { github = "https://www.github.com/varomix" },
+  { youtube = "https://www.youtube.com/watch?v=XU5LCUP25RY" },
 ]
 
 [caches]
