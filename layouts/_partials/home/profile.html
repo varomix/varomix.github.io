@@ -7,18 +7,18 @@
   {{ end }}
 {{ end }}
 <div class="hero-top">
-  <div class="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-14">
+  <div class="hero-row">
     {{ $lazy := site.Params.enableImageLazyLoading | default true }}
     {{ $altText := (site.Language.Params.Author.name | default "Author") }}
     {{ with site.Language.Params.Author.image }}
     {{ $authorImage := resources.Get . }}
     {{ if $authorImage }}
-    {{ $imgClass := "profile-img h-auto rounded-full shrink-0" }}
+    {{ $imgClass := "profile-img h-auto rounded-full hero-photo" }}
     {{ $webp := site.Params.enableImageWebp | default true }}
     {{ partial "picture.html" (dict "img" $authorImage "alt" $altText "class" $imgClass "lazy" $lazy "webp" $webp) }}
     {{ end }}
     {{ end }}
-    <div class="flex flex-col items-center md:items-start">
+    <div class="hero-info">
       <h1 class="text-4xl font-extrabold">
         {{ site.Language.Params.Author.name | default site.Title }}
       </h1>
@@ -28,7 +28,7 @@
       </h2>
       {{ end }}
       {{ with site.Language.Params.Author.bio }}
-      <p class="mt-4 text-center md:text-left text-base text-neutral-500 dark:text-neutral-400">
+      <p class="mt-4 text-base text-neutral-500 dark:text-neutral-400">
         {{ . | markdownify | emojify }}
       </p>
       {{ end }}
