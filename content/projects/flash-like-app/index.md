@@ -1,15 +1,15 @@
 ---
 title: "Kiln & Spark — A C GUI Framework and Flash-Style Animation Tool"
-description: "A retained-mode C GUI framework (Kiln) and a Flash CC-style 2D animation application (Spark) built on Clay, SDL3, GLES3, and FreeType — with a bezier-native vector path engine, GPU SDF brush rendering, binary-tree docking, and an undo/redo system covering 10 command types."
+description: "A Flash-inspired 2D animation application and retained-mode GUI framework written in C. Built to explore the architecture of professional creative tools, including custom UI systems, vector graphics, GPU rendering, animation timelines, and pressure-sensitive drawing workflows."
 tech: ["C", "SDL3", "OpenGL ES 3", "FreeType", "Clay"]
 weight: 1
 ---
 
 ## Overview
 
-Kiln is a **retained-mode C GUI framework** — widget state lives in persistent structs, not in a per-frame API like Dear ImGui. It sits on **Clay** for layout, **SDL3** for windowing and input, **GLES3** for rendering, and **FreeType** for text.
+Kiln and Spark are a retained-mode GUI framework and a Flash-inspired 2D animation application built entirely in C. The project was created to explore the architecture behind professional creative software, including custom UI frameworks, vector graphics, GPU rendering, animation timelines, and digital drawing tools.
 
-**Spark** is built on Kiln — a Flash CC-style 2D animation application that needs all of it: a canvas with pan/zoom, drawing tools with pen pressure, a timeline with keyframes, onion skinning, a docking workspace, and a vector brush pipeline that boolean-merges overlapping strokes into clean silhouettes.
+Rather than relying on existing application frameworks, Kiln provides the foundation for complex desktop applications with docking workspaces, custom widgets, text rendering, and undo/redo support. Spark demonstrates the framework in practice through a complete animation workflow featuring vector drawing, pressure-sensitive brushes, keyframe animation, onion skinning, and a multi-panel production interface.
 
 ---
 

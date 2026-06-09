@@ -1,15 +1,15 @@
 ---
 title: "OhCAD — Parametric CAD Kernel in Odin"
-description: "A feature-complete parametric CAD system built from scratch in Odin, featuring a 2D constraint solver, 3D extrusion/boolean operations, and Metal GPU rendering via SDL3."
+description: "A parametric CAD system built from scratch using OpenCASCADE. Created to explore constraint solving, geometric modeling, and the architecture of modern engineering software."
 tech: ["Odin", "SDL3", "Metal", "OpenCASCADE", "SolveSpace", "Metal Shading Language"]
-weight: 1
+weight: 4
 ---
 
 ## Overview
 
-OhCAD is a **parametric part-design CAD kernel and interactive 3D modeling application** written entirely in [Odin](https://odin-lang.org). It implements a full modeling workflow — sketch a 2D profile, apply constraints, extrude into a solid, and perform boolean cut operations — all within a GPU-accelerated UI backed by **SDL3** and **Metal**.
+**OhCAD** is a **parametric CAD application** built to explore the architecture and algorithms behind modern engineering software. Developed using OpenCASCADE, the project focuses on geometric modeling, constraint solving, feature-based design, and the challenges of creating professional-grade design tools from the ground up.
 
-The project was built over 12 weeks as a deep dive into CAD system architecture, geometric constraint solving, B-rep topology, low-level GPU programming, and custom immediate-mode UI framework design.
+The application supports sketch-based workflows, parametric modeling, and interactive editing, providing a practical environment for investigating how CAD systems represent geometry, maintain design intent, and manage complex relationships between features. Through this project, I explored computational geometry, software architecture, and the engineering principles that power modern computer-aided design software.
 
 <!-- TODO: add video/gif -->
 {{< video-placeholder "OhCAD demo — sketching, extruding, and boolean cutting" >}}

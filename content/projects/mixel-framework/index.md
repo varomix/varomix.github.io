@@ -1,18 +1,18 @@
 ---
 title: "Mixel — From HaxeFlixel Port to 2D/3D Game Framework"
 coverCaption: "Canabalt running on Mixel, Original Game by Adam Saltsman | https://canabalt.com"
-description: "How a weekend Odin experiment turned into a 38,000-line 2D/3D game framework with PBR rendering, cascaded shadow maps, hot-reload tooling, and 85+ working examples."
+description: "A 2D/3D game development framework written in Odin and inspired by the HaxeFlixel workflow. Built to explore engine architecture, rendering systems, hot-reload tooling, editor development, and cross-platform game creation from the ground up."
 tech: ["Odin", "SDL3", "Metal", "Vulkan"]
-weight: 1
+weight: 3
 ---
 
 ## What Started as a Flixel Port
 
-Mixel is a 2D game framework for Odin that reproduces the HaxeFlixel workflow — sprites, cameras, tilemaps, tweens, states, collision — then keeps going. A full 3D layer with PBR and cascaded shadow maps. An ImGui editor with a dockable viewport. Hot-reload via a cradle/dylib architecture. Fifty-plus HaxeFlixel demos ported and working. The 2D core runs arcade ports (Breakout, Canabalt, Flappybalt, Invaders). The 3D layer renders alongside it in the same fixed-timestep loop. The editor sits on top of both. And you can try all of it with a single `odin run` command.
+Mixel is a 2D/3D game development framework written in Odin that began as an effort to recreate the rapid prototyping workflow of HaxeFlixel in a systems programming language. What started as a simple port evolved into a complete framework featuring rendering, asset management, hot-reload tooling, an integrated editor, and support for both 2D and 3D game development.
+
+The project explores the challenges of engine architecture, graphics programming, cross-platform rendering, and developer tooling. Over the weeks, it grew into a big codebase with 85+ working examples, physically based rendering, shadow mapping, glTF support, and a custom hot-reload system designed to accelerate iteration during development.
 
 {{< figure src="/images/mixel-framework/phase2_game_demo.png" alt="Sprite animation, camera follow, tilemap collision, and particle effects running in Mixel" caption="2D gameplay showcase — sprite animation, camera follow, tilemap collision, and particle effects" >}}
-
-It started as a weekend experiment. Five weeks and 87 commits later, it's roughly 38,000 lines of Odin across 60 source files, with backends for SDL3 GPU (Metal/Vulkan) and Raylib.
 
 ---
 

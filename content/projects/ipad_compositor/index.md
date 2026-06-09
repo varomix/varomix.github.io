@@ -1,15 +1,15 @@
 ---
-title: "MIXTURE — iPad Node-Based Compositor & 3D Motion Graphics"
-description: "A professional node-based compositing and 3D motion graphics application for iPad with a raw Metal PBR renderer, ACES color management, 38 node types, and a full keyframe animation system — ~12,750 lines of Swift + Metal."
+title: "Mixture — iPad Node-Based Compositor & 3D Motion Graphics"
+description: "A node-based image compositing application for iPad created to bring desktop-style visual effects workflows to touch devices. Developed to investigate high-performance image processing and creative tooling on mobile hardware."
 tech: ["Swift", "SwiftUI", "Metal", "CoreImage", "Metal Shading Language", "ACES"]
-weight: 2
+weight: 6
 ---
 
 ## Overview
 
-MIXTURE is a **node-based compositing and 3D motion graphics application** purpose-built for iPad. It reimagines the desktop compositing workflow — think Nuke or Fusion — for a touch-first, Pencil-driven interface. The entire viewport is a camera looking into 3D space; all compositing happens in this 3D environment with full PBR rendering, animation, and export.
+Mixture is a node-based image compositing application for iPad built to explore how professional visual effects workflows can be adapted to touch-first devices. Inspired by tools such as Nuke and Fusion, the project investigates the challenges of bringing non-linear image processing, procedural workflows, and complex visual editing to a tablet environment.
 
-**119 Swift files + 5 Metal shaders | ~12,750 lines of code | 38 node types | 4 Swift packages**
+The application combines a custom node graph editor, GPU-accelerated image processing, and a touch-optimized interface designed around Apple Pencil and multitouch interaction. Through this project, I explored graphics programming, image processing pipelines, UI architecture, and the design tradeoffs required to make professional creative tools accessible on mobile hardware.
 
 Built entirely from scratch — no game engine, no off-the-shelf compositor library, no Unity/Unreal dependency. The application is organized into four layered Swift packages:
 

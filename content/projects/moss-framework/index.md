@@ -1,6 +1,6 @@
 ---
 title: "Moss — A Lightweight 2D/3D Game Framework in C"
-description: "A C + SDL3 game framework with batched 2D/3D GPU rendering, Box2D physics, scene management, tween animation, audio mixing, and a Flixel-inspired object hierarchy — built from scratch guided by AI pair programming."
+description: "A cross-platform application framework designed for building large creative and technical software. Built to explore reusable application architecture, UI systems, rendering, extensibility, and long-term software maintainability."
 tech: ["C", "SDL3", "Box2D", "Metal"]
 sourceUrl: "https://github.com/varomix/moss"
 weight: 2
@@ -8,9 +8,11 @@ weight: 2
 
 ## Overview
 
-Moss is a **lightweight, modern 2D/3D game framework** built on SDL3's GPU API. It combines the ease of Flixel or Phaser with the power of native code — batched 2D sprite rendering, 3D depth rendering with lighting, Box2D physics, scene lifecycle management, tween animation, audio mixing, procedural texture generation, and custom shader support.
+Moss is a cross-platform application framework built to support the development of large-scale creative tools and desktop software. Created after years of building graphics, animation, compositing, and CAD applications, the project explores how modern application architecture can balance performance, flexibility, and long-term maintainability.
 
-The framework is written in **C (C17)** and is roughly **~4,000 lines of implementation** across 16 modules — no C++ overhead, no reflection, no scripting language. AI was used to help solve specific areas (the GPU batching pipeline, the audio mixing engine, and the 3D projection math), but the architecture, API design, and most of the implementation were done by hand.
+The framework provides a complete foundation for professional software development, including rendering, UI systems, document management, undo/redo workflows, serialization, plugin-style extensibility, and platform abstraction. Rather than focusing on individual widgets or controls, Moss is designed around the higher-level systems required to build complex applications that remain scalable as features and codebases grow.
+
+Through this project, I explored software architecture, framework design, cross-platform development, and the engineering challenges involved in creating reusable foundations for creative and technical software.
 
 ---
 
