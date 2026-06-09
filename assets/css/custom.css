@@ -437,7 +437,7 @@ header.sticky {
 
 /* ---- SECTION STYLING ---- */
 .section-gap {
-  margin-top: 6rem;
+  margin-top: 4rem;
 }
 
 .section-bottom {
@@ -449,7 +449,8 @@ header.sticky {
 }
 
 .hero-top {
-  margin-top: 7rem;
+  margin-top: 3rem;
+  margin-bottom: 0;
 }
 
 .hero-row {
