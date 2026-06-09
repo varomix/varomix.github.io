@@ -1,4 +1,11 @@
-{{ $projects := sort (where .Site.RegularPages "Section" "projects") "Params.weight" "asc" }}
+{{ $allProjects := sort (where .Site.RegularPages "Section" "projects") "Params.weight" "asc" }}
+{{ $featured := where $allProjects "Params.featured" true }}
+{{ $regular := slice }}
+{{ range $allProjects }}
+  {{ if not .Params.featured }}
+    {{ $regular = $regular | append . }}
+  {{ end }}
+{{ end }}
 <div class="hero-about-row hero-top">
   <section class="hero-col not-prose flex flex-col items-center">
     {{ $lazy := site.Params.enableImageLazyLoading | default true }}
@@ -34,9 +41,35 @@
 
 <section id="projects" class="section-gap section-scroll">
   <h2 class="mb-8 text-center section-heading">Projects</h2>
-  {{ if $projects }}
-  <div class="project-grid">
-    {{ range $projects }}
+  {{ if $featured }}
+  <div class="featured-grid">
+    {{ range $featured }}
+    {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
+    <a href="{{ .RelPermalink }}" class="project-card project-card-featured no-underline">
+      {{ if $cover }}
+      {{ $thumb := $cover.Fill "1200x675" }}
+      <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
+      {{ end }}
+      <div class="project-card-body">
+        <h3 class="project-card-title">{{ .Title }}</h3>
+        {{ with .Params.description }}
+        <p class="project-card-desc">{{ . }}</p>
+        {{ end }}
+        {{ with .Params.tech }}
+        <div class="project-tech">
+          {{ range . }}
+          <span class="project-tech-tag">{{ . }}</span>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+    </a>
+    {{ end }}
+  </div>
+  {{ end }}
+  {{ if $regular }}
+  <div class="project-grid mt-8">
+    {{ range $regular }}
     {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
     <a href="{{ .RelPermalink }}" class="project-card no-underline">
       {{ if $cover }}
