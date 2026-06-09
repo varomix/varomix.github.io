@@ -515,8 +515,4 @@ header.sticky {
   gap: 1.5rem;
 }
 
-.project-card-featured .project-card-image {
-  max-height: 400px;
-  width: 100%;
-  object-fit: cover;
-}
+
