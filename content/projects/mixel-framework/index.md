@@ -3,6 +3,7 @@ title: "Mixel — From HaxeFlixel Port to 2D/3D Game Framework"
 coverCaption: "Canabalt running on Mixel, Original Game by Adam Saltsman | https://canabalt.com"
 description: "A 2D/3D game development framework written in Odin and inspired by the HaxeFlixel workflow. Built to explore engine architecture, rendering systems, hot-reload tooling, editor development, and cross-platform game creation from the ground up."
 tech: ["Odin", "SDL3", "Metal", "Vulkan"]
+featured: true
 weight: 3
 ---
 

@@ -8,33 +8,70 @@
     </section>
   {{ end }}
   {{ if .Pages }}
-    <section class="mt-8">
-      <div class="project-grid">
-        {{ $sorted := sort .Pages "Params.weight" "asc" }}
-        {{ range $sorted }}
-          {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
-          <a href="{{ .RelPermalink }}" class="project-card no-underline">
-            {{ if $cover }}
-              {{ $thumb := $cover.Fill "600x338" }}
-              <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
-            {{ end }}
-            <div class="project-card-body">
-              <h3 class="project-card-title">{{ .Title }}</h3>
-              {{ with .Params.description }}
-                <p class="project-card-desc">{{ . }}</p>
+    {{ $sorted := sort .Pages "Params.weight" "asc" }}
+    {{ $featured := where $sorted "Params.featured" true }}
+    {{ $regular := where $sorted "Params.featured" "ne" true }}
+
+    {{ if $featured }}
+      <section class="mt-8">
+        <h2 class="mb-6 text-2xl font-bold text-neutral-900 dark:text-neutral">Featured Projects</h2>
+        <div class="featured-grid">
+          {{ range $featured }}
+            {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
+            <a href="{{ .RelPermalink }}" class="project-card project-card-featured no-underline">
+              {{ if $cover }}
+                {{ $thumb := $cover.Fill "1200x675" }}
+                <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
               {{ end }}
-              {{ with .Params.tech }}
-                <div class="project-tech">
-                  {{ range . }}
-                    <span class="project-tech-tag">{{ . }}</span>
-                  {{ end }}
-                </div>
+              <div class="project-card-body">
+                <h3 class="project-card-title">{{ .Title }}</h3>
+                {{ with .Params.description }}
+                  <p class="project-card-desc">{{ . }}</p>
+                {{ end }}
+                {{ with .Params.tech }}
+                  <div class="project-tech">
+                    {{ range . }}
+                      <span class="project-tech-tag">{{ . }}</span>
+                    {{ end }}
+                  </div>
+                {{ end }}
+              </div>
+            </a>
+          {{ end }}
+        </div>
+      </section>
+    {{ end }}
+
+    {{ if $regular }}
+      <section class="mt-8">
+        <h2 class="mb-6 text-2xl font-bold text-neutral-900 dark:text-neutral">All Projects</h2>
+        <div class="project-grid">
+          {{ range $regular }}
+            {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
+            <a href="{{ .RelPermalink }}" class="project-card no-underline">
+              {{ if $cover }}
+                {{ $thumb := $cover.Fill "600x338" }}
+                <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
               {{ end }}
-            </div>
-          </a>
-        {{ end }}
-      </div>
-    </section>
+              <div class="project-card-body">
+                <h3 class="project-card-title">{{ .Title }}</h3>
+                {{ with .Params.description }}
+                  <p class="project-card-desc">{{ . }}</p>
+                {{ end }}
+                {{ with .Params.tech }}
+                  <div class="project-tech">
+                    {{ range . }}
+                      <span class="project-tech-tag">{{ . }}</span>
+                    {{ end }}
+                  </div>
+                {{ end }}
+              </div>
+            </a>
+          {{ end }}
+        </div>
+      </section>
+    {{ end }}
+
     {{ partial "pagination.html" . }}
   {{ else }}
     <section class="prose mt-10 dark:prose-invert">

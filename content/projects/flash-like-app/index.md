@@ -2,6 +2,7 @@
 title: "Kiln & Spark — A C GUI Framework and Flash-Style Animation Tool"
 description: "A Flash-inspired 2D animation application and retained-mode GUI framework written in C. Built to explore the architecture of professional creative tools, including custom UI systems, vector graphics, GPU rendering, animation timelines, and pressure-sensitive drawing workflows."
 tech: ["C", "SDL3", "OpenGL ES 3", "FreeType", "Clay"]
+featured: true
 weight: 1
 ---
 

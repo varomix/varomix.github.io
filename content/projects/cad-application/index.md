@@ -2,6 +2,7 @@
 title: "OhCAD — Parametric CAD Kernel in Odin"
 description: "A parametric CAD system built from scratch using OpenCASCADE. Created to explore constraint solving, geometric modeling, and the architecture of modern engineering software."
 tech: ["Odin", "SDL3", "Metal", "OpenCASCADE", "SolveSpace", "Metal Shading Language"]
+featured: true
 weight: 4
 ---
 
