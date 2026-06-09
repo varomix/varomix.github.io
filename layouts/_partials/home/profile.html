@@ -47,7 +47,7 @@
     {{ $cover := .Resources.GetMatch "thumb*" | default (.Resources.GetMatch "cover*") | default (.Resources.GetMatch "*feature*") }}
     <a href="{{ .RelPermalink }}" class="project-card project-card-featured no-underline">
       {{ if $cover }}
-      {{ $thumb := $cover.Fill "1200x675" }}
+      {{ $thumb := $cover.Fit "1200x675" }}
       <img src="{{ $thumb.Permalink }}" alt="{{ .Title }}" class="project-card-image" loading="lazy" />
       {{ end }}
       <div class="project-card-body">
