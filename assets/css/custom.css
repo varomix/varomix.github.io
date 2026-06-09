@@ -530,12 +530,9 @@ header.sticky {
 }
 
 /* ---- MERMAID TEXT ---- */
-.dark .mermaid-mx-text {
-  fill: #f1f4fa !important;
-}
-
-.dark .mermaid svg text {
-  fill: #f1f4fa !important;
+.dark .mermaid svg text,
+.dark .mermaid svg tspan {
+  fill: #000000 !important;
   font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,segoe ui,Roboto,helvetica neue,Arial,noto sans,sans-serif;
 }
 
