@@ -515,4 +515,43 @@ header.sticky {
   gap: 1.5rem;
 }
 
+/* ---- MERMAID DIAGRAMS ---- */
+.dark .mermaid {
+  background-color: var(--mix-bg-code);
+  border: 1px solid var(--mix-border);
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.dark .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.dark .mermaid svg .label {
+  color: var(--mix-text);
+  font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,segoe ui,Roboto,helvetica neue,Arial,noto sans,sans-serif;
+}
+
+.dark .mermaid svg .cluster-label span {
+  color: var(--mix-text);
+}
+
+.dark .mermaid svg .edgeLabel {
+  background-color: var(--mix-bg-code) !important;
+}
+
+.dark .mermaid svg .noteText {
+  fill: var(--mix-text);
+}
+
+.dark .mermaid svg .actor {
+  fill: var(--mix-text);
+}
+
+.dark .mermaid svg .messageText {
+  fill: var(--mix-text);
+}
+
 
