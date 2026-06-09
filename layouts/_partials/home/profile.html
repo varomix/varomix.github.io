@@ -6,8 +6,8 @@
     {{ $regular = $regular | append . }}
   {{ end }}
 {{ end }}
-<div class="hero-about-row hero-top">
-  <section class="hero-col not-prose flex flex-col items-center">
+<div class="hero-top">
+  <section class="flex flex-col items-center">
     {{ $lazy := site.Params.enableImageLazyLoading | default true }}
     {{ $altText := (site.Language.Params.Author.name | default "Author") }}
     {{ with site.Language.Params.Author.image }}
@@ -35,13 +35,6 @@
       {{ partialCached "author-links.html" . }}
     </div>
   </section>
-
-  {{ if .Content }}
-  <section id="about" class="about-col section-scroll">
-    <h2 class="mb-6 section-heading">About</h2>
-    <div class="prose dark:prose-invert">{{ .Content | emojify }}</div>
-  </section>
-  {{ end }}
 </div>
 
 <section id="projects" class="section-gap section-scroll">
@@ -103,6 +96,13 @@
   </p>
   {{ end }}
 </section>
+
+{{ if .Content }}
+<section id="about" class="section-gap section-scroll">
+  <h2 class="mb-6 text-center section-heading">About</h2>
+  <div class="prose dark:prose-invert max-w-3xl mx-auto">{{ .Content | emojify }}</div>
+</section>
+{{ end }}
 
 <section id="contact" class="section-gap section-bottom section-scroll">
   <h2 class="mb-6 text-center section-heading">Contact</h2>

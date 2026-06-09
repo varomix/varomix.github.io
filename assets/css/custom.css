@@ -448,35 +448,8 @@ header.sticky {
   scroll-margin-top: 6rem;
 }
 
-/* ---- HERO / ABOUT ROW ---- */
-.hero-about-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-  position: relative;
-}
-
-@media (min-width: 768px) {
-  .hero-about-row {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-
-  .hero-col {
-    flex: 1 1 50%;
-  }
-
-  .about-col {
-    flex: 1 1 50%;
-  }
-}
-
 .hero-top {
   margin-top: 7rem;
-}
-
-.about-col .prose {
-  max-width: none;
 }
 
 .nav-links {
