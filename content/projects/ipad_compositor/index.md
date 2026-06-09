@@ -2,7 +2,8 @@
 title: "Mixture — iPad Node-Based Compositor & 3D Motion Graphics"
 description: "A node-based image compositing application for iPad created to bring desktop-style visual effects workflows to touch devices. Developed to investigate high-performance image processing and creative tooling on mobile hardware."
 tech: ["Swift", "SwiftUI", "Metal", "CoreImage", "Metal Shading Language", "ACES"]
-weight: 6
+featured: true
+weight: 2
 ---
 
 ## Overview

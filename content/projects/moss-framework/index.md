@@ -3,8 +3,7 @@ title: "Moss — A Lightweight 2D/3D Game Framework in C"
 description: "A cross-platform application framework designed for building large creative and technical software. Built to explore reusable application architecture, UI systems, rendering, extensibility, and long-term software maintainability."
 tech: ["C", "SDL3", "Box2D", "Metal"]
 sourceUrl: "https://github.com/varomix/moss"
-featured: true
-weight: 2
+weight: 8
 ---
 
 ## Overview
