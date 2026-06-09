@@ -530,6 +530,14 @@ header.sticky {
 }
 
 /* ---- MERMAID TEXT ---- */
+.dark .mermaid svg {
+  color: #000000;
+}
+
+.dark .mermaid svg .label {
+  color: #000000 !important;
+}
+
 .dark .mermaid svg text,
 .dark .mermaid svg tspan {
   fill: #000000 !important;
