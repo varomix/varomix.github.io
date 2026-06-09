@@ -27,7 +27,7 @@
     </h2>
     {{ end }}
     {{ with site.Language.Params.Author.bio }}
-    <p class="mt-4 max-w-md text-center text-base text-neutral-500 dark:text-neutral-400">
+    <p class="mt-4 text-center text-base text-neutral-500 dark:text-neutral-400">
       {{ . | markdownify | emojify }}
     </p>
     {{ end }}

@@ -459,15 +459,15 @@ header.sticky {
 @media (min-width: 768px) {
   .hero-about-row {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
   }
 
   .hero-col {
-    flex: 0 0 auto;
+    flex: 1 1 50%;
   }
 
   .about-col {
-    flex: 1 1 0%;
+    flex: 1 1 50%;
   }
 }
 
