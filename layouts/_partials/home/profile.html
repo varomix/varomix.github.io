@@ -73,13 +73,18 @@
       Looking forward to our next collaboration.
     </p>
     <div class="flex flex-wrap justify-center gap-6 contact-icons">
-      <a href="/resume.pdf" target="_blank" rel="noopener noreferrer" class="contact-link" aria-label="Resume">{{
-        partial "icon.html" "document-text" }}</a>
+      <a href="/resume.pdf" target="_blank" rel="noopener noreferrer" class="contact-link" aria-label="Resume">
+        {{ partial "icon.html" "document-text" }}
+        <span class="contact-label">Resume</span>
+      </a>
       {{ with site.Language.Params.Author.links }}
       {{ range $links := . }}
       {{ range $name, $url := $links }}
       <a href="{{ $url | safeURL }}" target="_blank" rel="me noopener noreferrer" class="contact-link"
-        aria-label="{{ $name | title }}">{{ partial "icon.html" $name }}</a>
+        aria-label="{{ $name | title }}">
+        {{ partial "icon.html" $name }}
+        <span class="contact-label">{{ $name | title }}</span>
+      </a>
       {{ end }}
       {{ end }}
       {{ end }}

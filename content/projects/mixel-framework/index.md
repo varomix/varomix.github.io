@@ -1,399 +1,292 @@
 ---
-title: "Mixel — A 2D/3D Game Framework in Odin"
-description: "An Odin game framework with MixState/MixSprite/MixCamera/MixTween/MixTilemap workflow, SDL3 GPU-accelerated 3D rendering, ImGui editor, hot-reload cradle architecture, and 25+ 3D examples — inspired by HaxeFlixel and built for desktop game development."
+title: "Mixel — From HaxeFlixel Port to 2D/3D Game Framework"
+coverCaption: "Canabalt running on Mixel, Original Game by Adam Saltsman | https://canabalt.com"
+description: "How a weekend Odin experiment turned into a 38,000-line 2D/3D game framework with PBR rendering, cascaded shadow maps, hot-reload tooling, and 85+ working examples."
 tech: ["Odin", "SDL3", "Metal", "Vulkan"]
 weight: 1
 ---
 
-## Overview
+## What Started as a Flixel Port
 
-Mixel is a **2D/3D game framework for Odin** that reproduces the workflow and gameplay behavior of HaxeFlixel while adding a full SDL3 GPU-powered 3D layer, an ImGui-based editor, and a hot-reload architecture. It exposes the familiar state/sprite/camera/tilemap/tween/sound model through Odin-native `Mix*` APIs.
+Mixel is a 2D game framework for Odin that reproduces the HaxeFlixel workflow — sprites, cameras, tilemaps, tweens, states, collision — then keeps going. A full 3D layer with PBR and cascaded shadow maps. An ImGui editor with a dockable viewport. Hot-reload via a cradle/dylib architecture. Fifty-plus HaxeFlixel demos ported and working. The 2D core runs arcade ports (Breakout, Canabalt, Flappybalt, Invaders). The 3D layer renders alongside it in the same fixed-timestep loop. The editor sits on top of both. And you can try all of it with a single `odin run` command.
 
-The project is structured in two tracks: a mature **2D core** with feature parity close to HaxeFlixel's workflow, and an expanding **3D layer** that runs on SDL3's GPU backend with Metal (macOS) / Vulkan (Linux, Windows). The editor is under active development, built on ImGui with dockable panels, a 3D viewport, scene hierarchy, inspector, and asset browser.
+{{< figure src="/images/mixel-framework/phase2_game_demo.png" alt="Sprite animation, camera follow, tilemap collision, and particle effects running in Mixel" caption="2D gameplay showcase — sprite animation, camera follow, tilemap collision, and particle effects" >}}
 
-{{< video-placeholder "Mixel 2D game demo — sprite animation, camera follow, and collision" >}}
-
----
-
-## Design Philosophy
-
-Mixel's goal is **authoring parity** with HaxeFlixel — keeping the simple, playful API style while exposing it through Odin. Key principles:
-
-- **`Mix*` naming**: Every public type and function uses the `Mix` prefix — `MixSprite`, `MixCamera`, `MixTween`, `MixState`, `MixG`
-- **Global runtime via `MixG`**: `MixG.keys`, `MixG.camera`, `MixG.sound`, `MixG.inputs`, `MixG.effects`, `MixG.signals` — matches the HaxeFlixel `FlxG` pattern
-- **Backend-agnostic**: All rendering, input, and audio goes through a runtime backend layer. SDL3 is the default; raylib remains as a 2D fallback
-- **Desktop-first**: macOS, Linux, Windows — no HTML5 or mobile targets in scope
-- **2D/3D coexistence**: 3D renders before the 2D HUD/debugger pass, so existing 2D overlays work with any 3D scene
+It started as a weekend experiment. Five weeks and 87 commits later, it's roughly 38,000 lines of Odin across 60 source files, with backends for SDL3 GPU (Metal/Vulkan) and Raylib.
 
 ---
 
-## Project Layout
+## Why Odin? Why HaxeFlixel?
+
+If you've ever built a game with HaxeFlixel, you know the appeal: it's simple, playful, and stays out of your way. A sprite, a camera, a tilemap, and you're prototyping. I'd been using Odin for other projects and kept wanting that same workflow — but Odin didn't have it.
+
+So I built it. The goal was **authoring parity** — not just porting features, but making common tasks feel just as short and obvious as they do in HaxeFlixel. The same `FlxG` global pattern. The same state lifecycle. The same `overlap`/`collide` semantics. Named `Mix*` instead of `Flx*`, Odin-native from the ground up.
+
+Odin made this easier than C or Rust would have:
+
+- **Compile-time `when` blocks** let me gate the entire 3D layer with `when backend.MIXEL_USE_SDL3` — 2D-only builds pay zero cost for 3D code, with no preprocessor, no build flags, no conditional compilation headaches.
+- **`defer` for resource cleanup** eliminated an entire class of memory leaks that plague C game frameworks. GPU allocations, audio buffers, window handles — all released automatically at scope exit.
+- **The `vendor` mechanism** ships SDL3 with the compiler. No package manager, no `apt install`, no CMake FetchContent. `import "vendor:sdl3"` and you're done.
+- **No build system.** `odin build .` compiles the entire project. Ninety-eight example files, zero build configuration.
+
+That part worked. What I didn't expect was where it would go next.
+
+---
+
+## Architecture Overview
+
+Mixel is organized in three layers:
 
 ```
-mixel/                     # Public framework code
-├── game.odin              # MixGame — fixed-timestep loop, state management
-├── globals.odin           # MixG — global runtime access
-├── state.odin             # MixState, MixSubState, ordered state layers
-├── basic.odin             # MixBasic — base lifecycle (active/visible/alive)
-├── object.odin            # MixObject — position, velocity, acceleration, drag
-├── sprite.odin            # MixSprite — textures, animation, color, flip, skew
-├── group.odin             # MixGroup — typed member management
-├── camera.odin            # MixCamera — follow, zoom, shake, fade, flash
-├── draw.odin              # Blend modes, filter modes
-├── scene.odin             # Scene graph and rendering traversal
-├── input.odin             # Keyboard, mouse, gamepad
-├── tilemap.odin           # MixTilemap — tile loading, rendering, collision
-├── tween.odin             # MixTween — easing, looping, chaining
-├── timer.odin             # MixTimer — one-shot and repeating timers
-├── sound.odin             # MixSound, MixMusic — loading, playback, fading
-├── text.odin              # MixText — font rendering
-├── bitmap_text.odin       # MixBitmapText — bitmap glyph text
-├── effects.odin           # Camera shake, flicker
-├── shader.odin            # Custom sprite shader loading
-├── emitter.odin           # Particle emitter
-├── transition.odin        # Screen transitions
-├── save.odin              # Save data management
-├── signals.odin           # Event signal system
-├── quadtree.odin          # Spatial partitioning
-├── bar.odin               # MixBar — health bars, progress bars
-├── button.odin            # MixButton — UI buttons
-├── three_d.odin           # Full 3D layer (6,400+ lines)
-├── editor/                # ImGui-based editor
-│   ├── editor.odin        # Stats overlay, editor API
-│   ├── viewport.odin      # 3D viewport panel with dock layout
-│   ├── theme.odin         # ImGui dark theme
-│   └── backend.odin       # Editor backend interface
-└── hot_reload_api.odin    # Function-pointer table for dylib reloading
-
-backends/
-├── sdl3/                  # Default backend (SDL3 GPU, Metal/Vulkan)
-├── raylib/                # 2D fallback backend
-└── runtime/               # Backend abstraction layer
-
-examples/
-├── phase1-10/             # Progressive engine examples (core systems)
-├── features/              # Feature-specific demos
-├── effects/               # Visual effects and shaders
-├── arcade/                # HaxeFlixel Arcade demo ports
-├── box2d_smoke/           # Box2D physics
-└── 3d/                    # 25+ 3D examples
-    ├── Mix3DCube          # Rotating cubes with HUD
-    ├── Mix3DLights        # Directional + point lights
-    ├── Mix3DTextured      # Textured materials
-    ├── Mix3DGLTF          # glTF/GLB model loading
-    ├── Mix3DPBR           # PBR with HDR environment
-    ├── Mix3DShadows       # Directional shadow maps
-    ├── Mix3DFPS           # First-person with skinned glTF
-    ├── Mix3DInstancing    # Many-object stress test
-    ├── Mix3DEditorSandwich # Editor + game render pass
-    ├── Mix3DPhysics       # Collider/BVH queries
-    └── ... (25 total)
+Game Code         (your game — imports mixel, never imports backends)
+    |
+Mixel Core        (mixel/*.odin — 60 files, ~38k LOC)
+    |
+Backend Runtime   (backends/runtime/backend.odin — compile-time dispatch)
+    |
+SDL3 GPU            Raylib
+(Metal/Vulkan)      (2D fallback)
 ```
+
+The core is built around `MixBasic` — a base type with update/draw/destroy function pointers, embedded in every game object. `MixGame` runs a fixed-timestep loop (configurable update/draw Hz independently). States stack hierarchically with camera-filtered rendering per layer.
+
+The cradle/dylib hot-reload system adds a fourth layer:
+
+```
+mixel_cradle (thin host — owns GPU context, audio, window)
+    |  Mix_API_V1 function table
+Game dylib   (compiled separately, reloaded at runtime)
+```
+
+{{< mermaid >}}
+graph TD
+    subgraph "Runtime"
+        Cradle[mixel_cradle] -->|Mix_API_V1| Game[Game dylib]
+        Cradle --> GPU[SDL3 GPU Context]
+        Cradle --> Audio[SDL3 Audio Mixer]
+        Cradle --> Window[OS Window]
+    end
+    subgraph "Compile Time"
+        Game --> Mixel[Mixel Core]
+        Mixel --> Runtime[backend/runtime]
+        Runtime -->|when MIXEL_USE_SDL3| SDL3[SDL3 GPU Backend]
+        Runtime -->|else| Raylib[Raylib Backend]
+    end
+{{< /mermaid >}}
+
+If that sounds over-engineered for a hobby framework — it is. And it took three rewrites to get right.
 
 ---
 
-## 2D Core
+## The 2D Core
 
-### MixGame & MixG
+The 2D side is what you'd want from a HaxeFlixel-alike: fixed-timestep loop, state stacking, sprites with animation, cameras with follow/shake/fade/flash, tilemaps with auto-tiling and per-tile collision, tweens, timers, particles, sound, text, save data, and an in-game debugger.
 
-Mixel uses a fixed-timestep update loop controlled by `update_hz` with independent `draw_hz`. State switching, substate stacking, and lifecycle dispatch follow HaxeFlixel conventions:
+Here's Breakout in the style of it:
 
 ```odin
 config := mx.MixGame_Config{
-    title = "My Game",
+    title = "Breakout",
     width = 640, height = 360,
-    update_hz = 60, draw_hz = 60,
     initial_state = game_state,
-    debugger_enabled = true,
 }
 mx.mix_game_init(&game, config)
 mx.mix_game_start(&game)
 ```
 
-All global subsystems are accessed through `MixG`:
+One `state` with an `on_create` that builds the paddle, ball, and bricks. An `on_update` that checks collision with `mx.MixG.collide()`. Done.
 
-```odin
-mx.MixG.keys.is_key_down(mx.MixKey_Space)
-mx.MixG.camera.shake(0.01, 0.5)
-mx.MixG.sound.play(sfx)
-```
+{{< figure src="/images/mixel-framework/sprite_animation.png" alt="Sprite animation demo running in Mixel" caption="Sprite animation with frame slicing and playback controls" >}}
+{{< figure src="/images/mixel-framework/tilemap_collision.png" alt="Tilemap with collision visualization" caption="Tilemap with auto-tiling and per-tile collision data" >}}
 
-### MixState
-
-States have named lifecycle hooks — `on_create`, `on_update`, `on_draw`, `on_destroy` — and four built-in render layers: `background_group`, `group`, `fx_group`, `hud_group`. Sub-states stack on top with optional persistence:
-
-```odin
-state := mx.MixState{
-    on_create = proc(s: ^mx.MixState) {
-        sprite := mx.mix_sprite_create(s)
-        mx.mix_sprite_load_graphic(sprite, "assets/player.png")
-        mx.mix_state_add(s, sprite)
-    },
-    on_update = proc(s: ^mx.MixState, dt: f32) {
-        if mx.MixG.keys.is_key_pressed(mx.MixKey_Space) {
-            mx.mix_open_sub_state(s, pause_state)
-        }
-    },
-}
-```
-
-### MixSprite
-
-Sprites support texture rendering, animation, color tint, alpha, scale, flip, skew, blend modes, and custom shaders:
-
-```odin
-sprite := mx.mix_sprite_create(state)
-mx.mix_sprite_load_graphic(sprite, "assets/player.png")
-mx.mix_sprite_set_graphic_size(sprite, 16, 16)
-mx.mix_sprite_animation_add(sprite, "run", {0, 1, 2, 3}, 12, true)
-mx.mix_sprite_animation_play(sprite, "run")
-sprite.color = mx.Red
-sprite.scale = mx.mix_point(2, 2)
-```
-
-{{< image-placeholder "Sprite animation demo with multiple characters and effects" >}}
-
-### MixCamera
-
-Cameras support follow targets with multiple styles (lock-on, platformer, top-down, screen-by-screen), dead zones, lead, lerp, shake, fade, and flash effects:
-
-```odin
-camera := mx.mix_camera_create(state)
-camera.follow_target = &player.object
-camera.follow_style = .Platformer
-camera.follow_lerp = 0.1
-mx.mix_camera_shake(camera, 0.01, 0.5)
-mx.mix_camera_fade(camera, mx.Black, 0.5)
-```
-
-{{< image-placeholder "Camera follow and shake effects in a platformer scene" >}}
-
-### Input, Sound, Tweens, Timers
-
-```odin
-// Keyboard/mouse/gamepad through MixG
-mx.MixG.keys.is_key_down(mx.MixKey_Space)
-mx.MixG.keys.is_key_just_pressed(mx.MixKey_Enter)
-mx.MixG.mouse.screen_x, mx.MixG.mouse.screen_y
-
-// Sound
-sfx := mx.mix_sound_load("assets/jump.wav")
-mx.MixG.sound.play(sfx, mx.mix_sound_options(volume=0.5))
-
-// Tween
-mx.mix_tween_f32(&player.x, 0, 500, 2.0, .QuadOut, {loop_type=.PingPong})
-
-// Timer
-mx.mix_timer(1.5, true, proc(t: ^mx.MixTimer) { ... })
-```
-
-### Collision & Tilemaps
-
-```odin
-// Sprite groups and collision
-mx.MixG.collide(player_group, wall_group)
-mx.MixG.overlap(bullets, enemies, on_hit)
-
-// Tilemap
-tilemap := mx.mix_tilemap_create(state)
-mx.mix_tilemap_load_map_from_csv(tilemap, "assets/map.csv", "assets/tileset.png")
-mx.mix_tilemap_set_collision_by_index(tilemap, {1, 2, 3}, true)
-mx.MixG.collide(player, tilemap)
-```
-
-{{< image-placeholder "Tilemap level with collision visualization overlay" >}}
+Where it gets interesting is what came after.
 
 ---
 
-## 3D Layer
+## Where It Gets Interesting
 
-The 3D layer is SDL3 GPU-only and runs as an opt-in system alongside the existing 2D pipeline. It renders before the 2D HUD/debugger pass, so standard Mixel 2D overlays work with any 3D scene.
+At some point I stopped asking "how close can I get to HaxeFlixel?" and started asking "what else can this do?" The answer turned out to be: a lot.
 
-### Core Types
+Mixel now ships with a full **SDL3 GPU-accelerated 3D layer**. It renders before the 2D HUD pass, so every existing Mixel 2D overlay — health bars, debug stats, fade transitions — works unmodified in a 3D scene.
 
 ```odin
+// A 3D scene in ~15 lines — with a 2D HUD that works automatically
 world := mx.mix_world3d_new()
-defer mx.mix_world3d_free(world)
-
-// Camera
 world.camera = mx.MixCamera3D{
     position = mx.vec3(0, 1.2, 5),
-    target  = mx.vec3(0, 0, 0),
-    fov_y   = 60,
-    near    = 0.1, far = 100,
+    target   = mx.vec3(0, 0, 0),
+    fov_y    = 60, near = 0.1, far = 100,
 }
-
-// Mesh
 mesh := mx.mix_mesh3d_cube_new(1)
-
-// Object
 cube := mx.mix_object3d_new(mesh)
-cube.transform.position = mx.vec3(0, 0, 0)
 cube.material = mx.mix_material3d_lambert()
 cube.color = mx.rgba(200, 100, 100)
 mx.mix_world3d_add(world, cube)
+
+// The 2D HUD still renders on top — same loop, no extra work
+text := mx.mix_text_create(state)
+text.text = "FPS: %d", mx.MixG.debugger.fps
 ```
 
-{{< image-placeholder "3D viewport showing multiple objects with different materials" >}}
+### PBR, Shadows, and Lighting
 
-### Materials & Lighting
+The 3D renderer supports Unlit, Lambert, **PBR** (metallic/roughness with normal, occlusion, and emissive maps), and **Toon** (cel-shaded) lighting models. Directional lights cast cascaded shadow maps with PCF filtering — the rotation-invariant bounding sphere technique that eliminates shimmer. Point and spot lights work too.
 
-```odin
-// Material types
-mat_unlit   := mx.mix_material3d_unlit()
-mat_lambert := mx.mix_material3d_lambert()
-mat_pbr     := mx.mix_material3d_pbr(.5, .3)  // metallic, roughness
+HDR environment maps load from equirectangular radiance files. The framework generates diffuse irradiance cubemaps, roughness-prefilter specular atlases, and the BRDF LUT — all on the CPU, all in Odin. ACES tone mapping on the output.
 
-// Textured material
-mx.mix_material3d_set_texture(&mat, texture)
-mx.mix_material3d_set_normal_texture(&mat, normal_map)
+{{< figure src="/images/mixel-framework/PBR_Helmet.webp" alt="PBR helmet model showing metallic reflections, rough surfaces, and HDR environment lighting" caption="Physically-based rendering in Mixel — the DamagedHelmet model showing metallic reflections, roughness variation, normal map detail, and HDR environment map lighting with ACES tone mapping" >}}
 
-// Lights
-world.directional_light = {direction=vec3(0.5, -1, 0.3), color=White, strength=1}
-world.ambient_strength = 0.3
-world.point_lights[0] = {position=vec3(2, 1, 0), color=Red, strength=3, radius=5}
-```
-
-{{< image-placeholder "PBR spheres under multiple lights with environment reflections" >}}
-
-### Shadows & Post-Processing
+### glTF, Skinned Animation, and Instancing
 
 ```odin
-// Directional shadow maps
-mx.mix_world3d_set_directional_shadows(&world, true, 1024)
-
-// Post-processing (invert, tint, vignette, grayscale, sobel, halftone, dither, hatching)
-world.post_effect = {kind=.Vignette, intensity=0.5, radius=0.3, falloff=0.5}
-```
-
-{{< video-placeholder "Post-processing effects cycling through invert, grayscale, sobel, halftone, dither, and hatching" >}}
-
-### glTF & Skinned Animation
-
-```odin
-// Static glTF
-asset := mx.mix_asset_load_model3d_obj("assets/barrel.obj")
-mx.mix_object3d_set_mesh(obj, asset.mesh)
-
-// Skinned glTF with animation
+// Load a skinned zombie from glTF
 zombie := mx.mix_gltf3d_load("assets/zombie.glb")
 mx.mix_gltf3d_apply_animation(&zombie, 0, time)
+mx.mix_world3d_add(world, zombie.mesh)
 
-// FPS-style first-person camera with separate meshes
-world.camera.position = mx.vec3(0, 1.7, 0)
-mx.mix_world3d_add(world, pistol_mesh)
-```
-
-{{< video-placeholder "Skinned zombie glTF model playing walk animation in first-person view" >}}
-
-### Instancing
-
-```odin
-group := mx.mix_instanced_mesh3d_new(mesh)
-for i in 0..1000 {
+// 10,000 instanced cubes — one draw call
+group := mx.mix_instanced_mesh3d_new(cube_mesh)
+for i in 0..10000 {
     mx.mix_instanced_mesh3d_add_instance(group, {
-        transform = {position = vec3(x, y, z)},
+        transform = {position = random_vec3()},
         color = random_color(),
     })
 }
 mx.mix_world3d_add_instanced(world, group)
 ```
 
-{{< image-placeholder "10,000 instanced cubes stress test with colored materials" >}}
+Static models load from glTF/GLB (with embedded textures and data URIs) or OBJ/MTL. Skinned animation supports up to 64 bones with cross-fade blending. Instancing pushes 10,000+ objects in a single draw call.
 
-### Current 3D Status
+{{< figure src="/images/mixel-framework/zombie_gltf.png" alt="Skinned zombie glTF model with walk animation" caption="glTF skinned animation — walk cycle on a zombie model with 64 bones" >}}
 
-The 3D layer is actively developed with the following shipped:
+### Post-Processing
 
-- Perspective/orthographic cameras with sub-rect viewports (split-screen, minimap)
-- Unlit, Lambert, PBR, and Toon (cel-shaded) lighting
-- Directional, point, and spot lights
-- Directional shadow maps with PCF filtering
-- Textured materials with normal, metallic/roughness, occlusion, and emissive maps
-- HDR environment lighting with equirectangular radiance maps
-- CPU-generated diffuse irradiance + roughness-prefilter textures
-- ACES tone mapping
-- glTF/GLB loading with embedded textures and data URIs
-- Morph targets
-- Custom post-processing (8 effects: invert, tint, vignette, grayscale, sobel, halftone, dither, hatching)
-- Fog (linear, exponential, exponential-squared)
-- Transparency sorting (alpha depth-write and alpha depth-read pipelines)
-- Frustum culling, material sorting, and batching
-- GPU instancing (separate vertex pipeline, instance buffer)
-- Persistent GPU mesh resources for eligible objects
-- OBJ loader with MTL material support
-- Colliders (AABB, sphere) with intersection queries and world raycasting
-- Skinned glTF animation with CPU skinning
-- First-person camera with weapon mesh
-- MixBillboard3D (full-facing and axis-Y cylindrical)
+Eight built-in post-process effects: invert, tint, vignette, grayscale, Sobel outlines, halftone, dither, and hatching. Fog (linear, exponential, exponential-squared). All toggled per-frame on the world struct — zero pipeline rebuild.
+
+{{< figure src="/images/mixel-framework/post_processing.png" alt="Post-processing effects cycling through invert, grayscale, Sobel outlines, halftone, dither, and hatching on a 3D scene" >}}
 
 ---
 
-## Editor
+## The Cradle That Didn't Crash
 
-The editor is under active development, built on ImGui with a dockable panel layout:
+The hot-reload system is the piece I'm most proud of — and the one that took the most beating to get right.
 
-- **Viewport**: Off-screen 3D render target embedded in an ImGui panel, drag-drop mesh asset support
-- **Scene**: Hierarchy panel with object selection
-- **Inspector**: Object transform, material, and lighting properties
-- **Assets**: Asset browser for textures, meshes, and materials
-- **Stats**: FPS, frame time, 3D batch/vertex/index/instance counters
-- **Custom dark theme**: Full ImGui color scheme
+Mixel uses a **cradle/dylib** pattern: a thin cradle executable owns the GPU context, audio mixer, and window. Game code compiles as a dynamic library. The cradle hands it a function-pointer table (`Mix_API_V1`) at startup — no linker dependencies, no duplicated globals.
 
-Dock layout is configurable with `editor.setup_default_dock_layout()`, persisted in `imgui.ini`.
+```odin
+Mix_API_V1 :: struct {
+    game_init:   proc(game: ^MixGame, config: MixGame_Config),
+    game_start:  proc(game: ^MixGame),
+    game_update: proc(game: ^MixGame, dt: f32),
+    game_draw:   proc(game: ^MixGame),
+}
+```
 
-{{< image-placeholder "ImGui editor with viewport, scene hierarchy, inspector, and asset browser panels" >}}
+It took three rewrites:
 
-### Hot-Reload Architecture
+- **V1** leaked GPU resources on every reload. Textures, pipelines, and buffer allocations accumulated in GPU memory until the driver killed the process. The fix required a complete GPU allocation tracker that walks every resource and releases it before swapping the dylib.
 
-Mixel uses a **cradle/dylib** pattern for live editing: the engine runs in a cradle executable, while game code is compiled as a dynamic library. The `hot_reload_api.odin` defines a function-pointer table (`Mix_API_V1`) that the cradle hands to the dylib at startup — no linker dependencies, no duplicated globals across the boundary. After recompilation, the cradle reloads the dylib while keeping the GPU context and mixer state alive.
+- **V2** tracked allocations but couldn't handle shader recompilation. If your game code changed a vertex shader, the old pipeline objects persisted in GPU memory and the new ones failed to compile against stale state. The fix was rebuilding all pipelines from the new code after every reload, not just the ones that changed.
 
----
-
-## Examples
-
-The repository includes **85+ examples** across progressive phases, features, effects, arcade ports, and 3D scenes:
-
-- **Phase 1–10**: Boot, camera/sprite, input/collision, tilemap, HUD/tween, audio, effects/particles, animation/assets, gamepad/camera FX, core surfaces
-- **Features**: Box2D, camera box2d, tilemap towns
-- **Effects**: Blur, bloom, color replace, crack, crumple, custom shader, edge glow, film roll, filters, fire, glitch, glow, knock, outline, pixel extend, pixel melt, pixel shockwave, pixelize, rain, raindrops, scribble, scanner, shade, swirl, tilt, trail, vignette, wave, wiggle
-- **Arcade ports**: Breakout, Flappybalt, Zombie Sniper, and more
-- **3D**: 25+ examples covering cubes, lights, textures, primitives, instancing, shadows, PBR, glTF, FPS, morph targets, physics, toon shading, billboards, parenting, and the editor sandwich
-
-{{< image-placeholder "Grid of example screenshots — phase demos, arcade ports, effects, and 3D scenes" >}}
+- **V3** — the current one — tracks every GPU allocation with generation counters, releases everything before swapping the dylib, then rebuilds all pipelines from the new code. Edit → recompile → see results. No restart, no leak, no stale state.
 
 ---
 
-## Key Results
+## The Editor
 
-| Metric | Value |
+The editor is built on Dear ImGui with dockable panels: a 3D viewport (off-screen render target embedded in ImGui), a scene hierarchy, an inspector for transforms/materials/lights, and an asset browser with texture and mesh thumbnails.
+
+{{< figure src="/images/mixel-framework/editor_panels.png" alt="ImGui editor with 3D viewport, scene hierarchy, inspector, and asset browser in a docked layout" caption="The Mixel editor — dockable ImGui panels with 3D viewport, scene hierarchy, inspector, and asset browser" >}}
+
+The editor reuses the same cradle architecture — it's just a dylib that happens to draw ImGui panels. Asset hot-reload (textures, OBJ meshes) and shader hot-reload work through the same system.
+
+---
+
+## Proof: 85+ Examples That Actually Work
+
+Numbers are cheap. Working examples aren't. Every example in the repository proves a specific capability:
+
+| Category | Count | What It Proves |
+|---|---|---|
+| **Phase demos** | 10 | Progressive tour of every core system — boot, camera, sprite, input, collision, tilemap, HUD, audio, effects, animation |
+| **Feature ports** | 22 | Collision, tilemap, Box2D, FSM, pathfinding, replay, save, split-screen, scene system, particles, pie dials, scale modes |
+| **Effect demos** | 18 | Bloom, blur, glitch, cloth sprite, dynamic shadows, flood fill, transitions, tweens, custom shaders, parallax, trail areas |
+| **Arcade ports** | 10 | Breakout, Canabalt, Flappybalt, Flixius, MinimalistTD, MixInvaders, MixLightPuzzle, MixPongApi, MixSnake, MixTeroids |
+| **3D examples** | 25+ | Cubes, lights, textures, PBR, shadows, glTF, instancing, FPS, physics, toon shading, billboards, morph targets, split-screen, editor sandwich |
+
+Each one runs with a single command:
+
+```bash
+odin run examples/arcade/Breakout -collection:mixel=.
+odin run examples/3d/Mix3DPBR -collection:mixel=.
+```
+
+{{< figure src="/images/mixel-framework/examples_grid.png" alt="Grid of example screenshots — arcade ports, effect demos, and 3D scenes" caption="A sampling of working examples — arcade ports, effect demos, and 3D scenes" >}}
+
+The hardest ports taught me the most. Breakout took two hours (everything fit the API). Invaders took three days (the sprite-atlas animation system had edge cases I hadn't hit in my own demos). The PBR viewport demo forced me to fix five separate bugs in the descriptor management layer.
+
+---
+
+## The Numbers
+
+| | |
 |---|---|
-| **Language** | Odin |
-| **Framework LOC (mixel/)** | ~18,000 lines |
-| **3D layer LOC** | ~6,400 lines (three_d.odin) |
-| **Backends** | SDL3 GPU (primary), raylib (2D fallback) |
-| **Update loop** | Fixed timestep with independent draw Hz |
-| **State system** | Ordered layers + substate stacking |
+| **Framework LOC** | ~38,778 Odin across 60 source files |
+| **Backends** | SDL3 GPU (Metal/Vulkan), Raylib 2D fallback |
+| **Examples** | 85+ across phases, features, effects, arcade, 3D |
 | **3D lighting** | Unlit, Lambert, PBR, Toon |
 | **3D shadows** | Directional shadow maps with PCF |
-| **3D post-effects** | 8 built-in (invert, tint, vignette, grayscale, sobel, halftone, dither, hatching) |
-| **3D formats** | glTF/GLB + OBJ/MTL |
-| **3D animations** | Skinned glTF with CPU skinning |
-| **3D billboards** | Full-facing and axis-Y |
-| **2D effects** | 30+ shader effects |
-| **Examples** | 85+ (10 phase, 30+ effects, 20+ arcade/features, 25+ 3D) |
-| **Editor** | ImGui dockable panels, viewport, hot-reload cradle |
-| **Audio** | Sound + music loading, playback, fading, groups |
-| **Tween** | 30+ easing functions, looping, ping-pong, chaining |
-| **Windowing** | SDL3 (default), raylib (fallback) |
-| **Platform** | macOS, Linux, Windows |
-| **Build** | `odin run example -collection:mixel=.` |
-| **Tests** | Unit tests in `tests/unit/` |
+| **Post-effects** | 8 built-in, toggle per frame |
+| **Asset formats** | glTF/GLB, OBJ/MTL |
+| **Skinned animation** | glTF, up to 64 bones, CPU skinning |
+| **Platforms** | macOS, Linux, Windows |
+| **Timeline** | ~5 weeks, 87 commits (Apr 29 — Jun 3, 2026) |
+| **Build** | `odin run . -collection:mixel=.` |
 
 ---
 
-## Current Status
+## What I Learned
 
-The 2D core is mature — sprites, animation, cameras, tilemaps, collision, tweens, audio, text, particles, effects, transitions, save data, gamepad input, and debugger are all functional. The 3D layer is actively expanding with new features shipping regularly (PBR, shadow maps, skinned animation, glTF, post-processing). The editor is in progress — the ImGui viewport, dock layout, stats overlay, and hot-reload cradle are working, with the full scene/inspector/assets panels under development.
+**1. GPU resource tracking is the hardest part of a game framework.** Textures, pipelines, buffers, samplers — every GPU API resource has a different creation path, a different destruction path, and a different lifetime. Getting hot-reload right meant building a resource tracker before most of the renderer. If I started over, I'd build the tracker first.
 
-**Built in Odin. ~18,000 lines of framework code. 85+ examples. 2D + 3D + editor.**
+**2. Backend abstraction is a liar's bargain.** The compile-time `when` dispatch between SDL3 GPU and Raylib works, but every new feature adds a conditional branch. The 3D layer is SDL3-only because the abstraction cost wasn't worth it. Two backends is already one too many for a solo project.
+
+**3. Fixed-timestep with variable draw is the right call for 2D, wrong for 3D.** The decoupled update/draw Hz works beautifully for pixel-art games where you want deterministic physics at 60 updates per second but don't need 60 FPS draws. For 3D, you want variable update with interpolation — the current architecture wastes GPU time on 3D frames nobody sees.
+
+**4. ImGui is a surprisingly good editor foundation.** It's not pretty, but it works on every platform, docks out of the box, and the off-screen render target pattern is a known solution. The asset browser thumbnail pipeline was the hardest part — not ImGui itself.
+
+**5. Odin's build model is a superpower for framework distribution.** No CMake, no vcpkg, no Conan, no package manager. The compiler is a single binary. `odin run .` compiles and runs. That's it. For a framework that wants people to try it, this removes more friction than any API design decision.
+
+---
+
+## What I'd Do Differently
+
+- **Build the GPU resource tracker before anything else.** It would have saved the V1 and V2 rewrites of the cradle.
+- **Skip the Raylib backend.** It was useful for early prototyping but has been a maintenance tax since the SDL3 backend matured. Pareto says drop it.
+- **Write more examples earlier.** The phase demos were written after the features. Writing them concurrently would have caught API design mistakes faster.
+- **Add a scripting layer.** Mixel is pure Odin, which means every change requires a recompile (even with hot-reload). A Lua or WASM script layer for game logic would make iteration faster for game jams.
+
+---
+
+## What's Next
+
+The 2D core is stable. The 3D layer is actively expanding — deferred shading, GPU skinning, and more post-effects are in progress. The editor's asset browser needs thumbnails for glTF files. GPU skinning is roughly two weeks out. Deferred shading will follow.
+
+Long-term, I'd like to see someone ship a full game with this.
+
+---
+
+## Try It
+
+```bash
+cd hflixel_odin
+odin run examples/arcade/Breakout -collection:mixel=.
+```
+
+Or pick any of the 85+ examples. The Odin compiler is a single binary download — no package manager, no dependency hell. One command, and you're running a Mixel game.
+
+Star the repo, fork it, or just run Breakout and see what 38,000 lines of Odin can do. I'd love to see what you build.
+
+---
+
+*If you've ever wanted the HaxeFlixel workflow in a systems language — or you just want to see what happens when a 2D framework grows a 3D renderer — this is it.*

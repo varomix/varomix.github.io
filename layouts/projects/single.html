@@ -28,6 +28,9 @@
           {{ $class := "rounded-md w-full" }}
           {{ $webp := $.Page.Site.Params.enableImageWebp | default true }}
           {{ partial "picture.html" (dict "img" . "alt" $altText "class" $class "lazy" false "webp" $webp) }}
+          {{ with $.Params.coverCaption }}
+            <figcaption class="mt-2 mb-6 text-center text-sm italic text-neutral-500 dark:text-neutral-400">{{ . | markdownify }}</figcaption>
+          {{ end }}
         </div>
       {{ end }}
       <div class="mb-8 flex gap-4">
@@ -35,7 +38,7 @@
           <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-primary">Live Demo</a>
         {{ end }}
         {{ with .Params.sourceUrl }}
-          <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-secondary">Source Code</a>
+          <a href="{{ . }}" target="_blank" rel="noopener noreferrer" class="btn-secondary">{{ partial "icon.html" "github" }} Source Code</a>
         {{ end }}
       </div>
     </header>

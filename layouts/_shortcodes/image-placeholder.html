@@ -1,5 +1,17 @@
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" | default (.Get 0 | default "Add image here") -}}
+{{- $caption := .Get "caption" -}}
+{{- if $src -}}
+<div class="my-8">
+  <img src="{{ $src }}" alt="{{ $alt }}" class="w-full rounded-xl" loading="lazy" />
+  {{- if $caption -}}
+  <p class="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">{{ $caption }}</p>
+  {{- end -}}
+</div>
+{{- else -}}
 <div class="my-8 rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-100 p-8 text-center dark:border-neutral-600 dark:bg-neutral-800">
   <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-    [Image placeholder: {{ .Get 0 | default "Add image here" }}]
+    [Image placeholder: {{ $alt }}]
   </p>
 </div>
+{{- end -}}

@@ -2,6 +2,7 @@
 title: "Moss — A Lightweight 2D/3D Game Framework in C"
 description: "A C + SDL3 game framework with batched 2D/3D GPU rendering, Box2D physics, scene management, tween animation, audio mixing, and a Flixel-inspired object hierarchy — built from scratch guided by AI pair programming."
 tech: ["C", "SDL3", "Box2D", "Metal"]
+sourceUrl: "https://github.com/varomix/moss"
 weight: 2
 ---
 

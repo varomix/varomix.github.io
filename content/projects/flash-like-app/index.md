@@ -1,6 +1,6 @@
 ---
 title: "Kiln & Spark — A C GUI Framework and Flash-Style Animation Tool"
-description: "A retained-mode C GUI framework (Kiln) and a Flash CC-style 2D animation application (Spark) built on Clay, SDL3, GLES3, and FreeType — with 30+ widgets, a bezier-native vector path engine, GPU SDF brush rendering, binary-tree docking, and full animation tooling."
+description: "A retained-mode C GUI framework (Kiln) and a Flash CC-style 2D animation application (Spark) built on Clay, SDL3, GLES3, and FreeType — with a bezier-native vector path engine, GPU SDF brush rendering, binary-tree docking, and an undo/redo system covering 10 command types."
 tech: ["C", "SDL3", "OpenGL ES 3", "FreeType", "Clay"]
 weight: 1
 ---
@@ -9,44 +9,77 @@ weight: 1
 
 Kiln is a **retained-mode C GUI framework** — widget state lives in persistent structs, not in a per-frame API like Dear ImGui. It sits on **Clay** for layout, **SDL3** for windowing and input, **GLES3** for rendering, and **FreeType** for text.
 
-**Spark** is the reason Kiln exists — a Flash CC-style 2D animation application that needs all of it: a canvas with pan/zoom, drawing tools with pen pressure, a timeline with keyframes, onion skinning, a docking workspace, and a vector brush pipeline that can booleans-merge overlapping strokes into clean silhouettes the way Flash/Animate does.
+**Spark** is built on Kiln — a Flash CC-style 2D animation application that needs all of it: a canvas with pan/zoom, drawing tools with pen pressure, a timeline with keyframes, onion skinning, a docking workspace, and a vector brush pipeline that boolean-merges overlapping strokes into clean silhouettes.
 
-{{< video-placeholder "Spark workspace — brush drawing with pen pressure, timeline playback, and onion skinning" >}}
+---
+
+## Architecture
+
+```
+Spark (animation application)
+    |
+Kiln (30+ widget modules, vector engine, dock system)
+    |
+Clay (retained layout — sizing, positioning, scrolling, clipping)
+    |
+GLES3 / OpenGL 3.3 (rendering)
+    |
+SDL3 (windowing, input, pen pressure)
+    |
+FreeType (text shaping, glyph atlas)
+```
+
+{{< mermaid >}}
+graph TD
+    Spark[Spark Animation App] --> Kiln[Kiln GUI Framework]
+    Kiln --> Clay[Clay Layout Engine]
+    Kiln --> VectorEngine[Vector Path Engine]
+    Kiln --> DockSys[Docking System]
+    VectorEngine --> Bezier[Bezier Math]
+    VectorEngine --> Boolean[Boolean Ops]
+    VectorEngine --> SDF[GPU SDF Brush]
+    VectorEngine --> Stencil[Stencil-and-Cover]
+    Kiln --> GL[GLES3 Renderer]
+    GL --> SDL3[SDL3 Windowing/Input]
+    Kiln --> FT[FreeType Text]
+{{< /mermaid >}}
+
+The lifecycle is straightforward: `kiln_init()` creates the SDL3 window, GL context, Clay arena, and text atlas. Each frame calls `kiln_begin_frame()` (poll events, update input and Clay), user code declares layout and widgets, then `kiln_render_frame()` draws everything. `kiln_end_frame()` swaps buffers.
+
+Clay handles retained layout automatically — sizing, positioning, scrolling, clipping. Kiln provides widget behavior, text shaping, and rendering on top.
 
 ---
 
 ## Retained-Mode in C
 
-Most C/C++ GUIs are immediate-mode (Dear ImGui) or widget-tree (GTK/Qt). Kiln takes a different path: **state-in-structs**. You declare the state, pass a pointer to the widget function, and Kiln reads/writes it across frames:
+Most C/C++ GUIs are immediate-mode (Dear ImGui) or widget-tree (GTK/Qt). Kiln takes a different approach: **state-in-structs**. You declare the state, pass a pointer to the widget function, and Kiln reads and writes it across frames:
 
 ```c
 KilnCheckboxState cb = { .checked = false };
 kiln_checkbox("Option A", &cb);   // cb.checked changes on click
 ```
 
-This means the caller owns the state — you can serialize it, undo it, share it between windows, or inspect it without calling into the framework. The widget functions are pure: they read input, check their state, emit Clay layout, and return.
+The caller owns the state — you can serialize it, undo it, share it between windows, or inspect it without calling into the framework. Widget functions are pure: they read input, check their state, emit Clay layout, and return.
 
-Clay handles the retained layout engine (sizing, positioning, scrolling, clipping), while Kiln provides the widget behavior on top. The separation works well: ~100 lines of Clay for layout, the rest is widget logic, text shaping, and rendering.
+Clay handles the retained layout engine, while Kiln provides the widget behavior. The separation works well: Clay manages layout computation while Kiln handles widget logic, text shaping, and rendering.
 
-The framework grew to **30+ widget types** across the usual categories — buttons, toggles, sliders, checkboxes, radios, progress bars, dropdowns, number inputs, tabs, panels, splits, grids, modals, menus, tree views, tables, color pickers, and a text input with clipboard, undo/redo, and double/triple-click select.
+The framework grew to 30+ widget types across the usual categories — buttons, toggles, sliders, checkboxes, radios, progress bars, dropdowns, number inputs, tabs, panels, splits, grids, modals, menus, tree views, tables, color pickers, and a text input with clipboard, undo/redo, and double/triple-click select.
 
-But the interesting parts are the three systems that make Spark possible: the vector path engine, the SDF brush renderer, and the docking workspace.
+The three systems that make Spark possible are the vector path engine, the SDF brush renderer, and the docking workspace.
 
 ---
 
 ## Vector Path Engine
 
-The brush tool in Flash takes a freehand stroke and turns it into a filled shape that can merge with other strokes. Doing this well requires bezier math, boolean operations on curves, and resolution-independent rendering — all without polygon tessellation.
+The brush tool in Flash takes a freehand stroke and turns it into a filled shape that can merge with other strokes. This requires bezier math, boolean operations on curves, and resolution-independent rendering — all without polygon tessellation.
 
-The engine is three files:
+### Bezier Math
 
-### Bezier Math (`kiln_bezpath.c`, ~900 lines)
-
-Paths are arrays of cubic bezier contours. The library provides the usual: eval, split, bounds, tangents, normals, arc length, inflection finding, and adaptive flattening via de Casteljau subdivision.
+Paths are arrays of cubic bezier contours. The library provides eval, split, bounds, tangents, normals, arc length, inflection finding, and adaptive flattening via de Casteljau subdivision.
 
 Two operations are critical for the brush pipeline:
 
-**Stroke-to-fill conversion** turns a centerline polyline + width into a closed outline path. The uniform-width version offsets each segment and adds round caps/joins. The variable-width version interpolates radii between endpoints:
+**Stroke-to-fill conversion** turns a centerline polyline plus width into a closed outline path. The uniform-width version offsets each segment and adds round caps and joins. The variable-width version interpolates radii between endpoints for pen pressure:
 
 ```c
 // Centerline as a path, radii at each endpoint
@@ -55,11 +88,11 @@ KilnPath *fill = kiln_path_stroke_to_fill_variable(centerline, radii, count);
 
 **Winding number** and **point containment** via cubic root finding — used for hit-testing brush shapes on the stage.
 
-### Boolean Operations (`kiln_bezbool.c`, ~900 lines)
+### Boolean Operations
 
 When two brush strokes overlap, Flash merges them into a single shape. Doing this with polygons is straightforward (Clipper2, libtess2). Doing it with bezier curves is not.
 
-The implementation uses **Bezier clipping** (Sederberg & Nishita, 1990) for curve-curve intersection. Given two bezier curves, it recursively subdivides at parameter values where they cross, producing a list of intersection parameters. From these, the boolean engine reconstructs the boundary of the union/intersection/difference.
+The implementation uses **Bezier clipping** (Sederberg & Nishita, 1990) for curve-curve intersection. Given two bezier curves, it recursively subdivides at parameter values where they cross, producing a list of intersection parameters. From these, the boolean engine reconstructs the boundary of the union, intersection, or difference — all in bezier form, no polygon conversion at any stage.
 
 ```c
 KilnPath *merged = kiln_path_boolean(stroke_a, stroke_b, UNION);
@@ -68,13 +101,9 @@ KilnPath *clean  = kiln_path_self_union(stroke);  // resolve self-crossings
 
 All geometry uses double precision — single-precision errors accumulate in the recursive clipping and produce visible gaps in the merged silhouette.
 
-### Stencil-and-Cover (`kiln_pathrender.c`, ~330 lines)
+### Stencil-and-Cover Rendering
 
-The merged paths render via the stencil buffer with the non-zero winding rule: draw the path once to invert the stencil, then cover. Since the bezier segments are flattened at render time based on current zoom, the result is resolution-independent — zooming in produces smoother curves, not bigger pixels.
-
-No polygon tessellation. No intermediate representation. Bezier paths go from CPU to GPU through the stencil buffer directly.
-
-{{< image-placeholder "Vector path rendering — boolean union of overlapping brush strokes into a single clean silhouette" >}}
+The merged paths render via the stencil buffer with the non-zero winding rule: draw the path once to invert the stencil, then cover. Since bezier segments are flattened at render time based on current zoom, the result is resolution-independent — zooming in produces smoother curves, not larger pixels. No polygon tessellation or intermediate representation is needed.
 
 ---
 
@@ -82,12 +111,12 @@ No polygon tessellation. No intermediate representation. Bezier paths go from CP
 
 The stencil-and-cover pipeline works for vector paths but has a problem with brush strokes: re-flattening every frame at high zoom produces thousands of line segments, and the boolean merge for variable-width strokes is expensive to recompute.
 
-The SDF pipeline takes a different approach. Instead of computing the filled outline, it keeps the brush strokes as **centerline cubics + per-endpoint radii** and evaluates them as signed distance fields on the GPU:
+The SDF pipeline takes a different approach. Instead of computing the filled outline, it keeps brush strokes as **centerline cubics plus per-endpoint radii** and evaluates them as signed distance fields on the GPU:
 
 ```
 Pen input → Chaikin smooth → Schneider bezier fit →
   centerline cubics + radii →
-    GPU: cubic→quadratic approximation → R16F FBO with GL_MIN blend →
+    GPU: cubic-to-quadratic approximation → R16F FBO with GL_MIN blend →
       compositing where SDF < 0
 ```
 
@@ -101,21 +130,20 @@ for each stroke {
 kiln_sdf_end_group();
 ```
 
-The advantages over the stencil pipeline:
+Advantages over the stencil pipeline:
+
 - **No CPU boolean computation** — merging happens on GPU via blend mode
-- **Variable width is free** — radii are per-endpoint, SDF evaluates the distance to the varying-width stroke implicitly
-- **Resolution-independent** — SDF is evaluated at pixel resolution every frame
-- **Onion skinning** — just change the compositing color to red/blue with reduced alpha
+- **Variable width is free** — radii are per-endpoint, the SDF evaluates distance to the varying-width stroke implicitly
+- **Resolution-independent** — the SDF is evaluated at pixel resolution each frame
+- **Onion skinning** — just change the compositing color to red or blue with reduced alpha
 
 Hit-testing on the CPU side uses the same SDF math — evaluate the minimum distance from a point to all cubic segments weighted by the radii at the nearest point.
-
-{{< video-placeholder "SDF brush strokes with pen pressure — variable width, real-time merging, and onion skin overlay" >}}
 
 ---
 
 ## Docking Workspace
 
-Spark's workspace — toolbar, canvas, properties, timeline — is built on a binary-tree docking system (`kiln_dock.c`). The tree internal is split nodes (horizontal or vertical with a ratio) and leaf nodes (tab groups):
+Spark's workspace — toolbar, canvas, properties, timeline — is built on a binary-tree docking system (`kiln_dock.c`). The tree consists of split nodes (horizontal or vertical with a ratio) and leaf nodes (tab groups):
 
 ```
         Split H (0.7)
@@ -134,24 +162,24 @@ KilnDockNodeId leaf_vp = kiln_dock_add_leaf(&dock, vp);
 
 Tab groups hold up to 8 panels per leaf. Panels can be dragged between tabs, detached as floating windows, or re-docked into any of five drop zones (center, top, right, bottom, left). The viewport is marked as the central node and cannot be closed.
 
-The drag system reads `Clay_GetElementData()` to find the target node's bounding box, computes which zone the cursor is in, and restructures the tree on drop.
+The drag system reads `Clay_GetElementData()` to find the target node's bounding box, computes which zone the cursor occupies, and restructures the tree on drop. Empty nodes are cleaned up automatically — when the last tab is dragged out of a leaf, the leaf is removed and the split tree collapses.
 
 ---
 
 ## Spark
 
-Spark is a Flash CC-style animation application built on Kiln. It uses every part of the framework: the canvas widget for the stage, the dock for the workspace layout, the menu bar for file/edit/view menus, panels for properties and timeline, the color picker for fill/stroke colors, number inputs for transform values, and the vector/SDF engines for drawing.
+Spark is a Flash CC-style animation application built on Kiln. It uses every part of the framework: the canvas widget for the stage, the dock for the workspace layout, the menu bar for file/edit/view menus, panels for properties and timeline, the color picker for fill/stroke colors, number inputs for transform values, and the vector and SDF engines for drawing.
 
 ### Drawing
 
-Six tools on the toolbar: Select, Rect, Oval, Line, Pen, and Brush. All shapes store their geometry in world space and render through their respective pipeline:
+Six tools on the toolbar: Select, Rect, Oval, Line, Pen, and Brush. All shapes store their geometry in world space:
 
-- **Rect/Oval**: Simple bounding-box shapes, drawn as filled polys or outlined via the line shader
+- **Rect/Oval**: Bounding-box shapes, drawn as filled polys or outlined via the line shader
 - **Line**: Two endpoints, Shift snaps to 45°
 - **Pen**: Click-to-add-point polyline with rubber-band preview, finalized on double-click or Escape
 - **Brush**: Freehand strokes with SDL3 pen pressure capture — each point records pressure as a radius
 
-The brush tool runs through: distance-based sampling of raw pen input → Chaikin corner-cutting for smooth centerlines → Schneider bezier fitting (Graphics Gems 1990) to produce compact cubic segments → variable-width stroke-to-fill → boolean merge with existing brush shapes on the same layer/frame.
+The brush tool runs through: distance-based sampling of raw pen input → Chaikin corner-cutting for smooth centerlines → Schneider bezier fitting (Graphics Gems 1990) to produce compact cubic segments → variable-width stroke-to-fill → boolean merge with existing brush shapes on the same layer and frame.
 
 ### Timeline
 
@@ -161,9 +189,9 @@ Layer operations: add, delete, rename, toggle visibility, lock. Keyboard shortcu
 
 ### Onion Skinning
 
-Toggle onion skinning to see previous/next frames overlaid on the current frame. Two draggable range markers on the playhead track control how many frames before and after are visible. Previous frames render with a red tint, next frames with blue, with opacity falling off by distance from the playhead.
+Toggle onion skinning to see previous and next frames overlaid on the current frame. Two draggable range markers on the playhead track control how many frames before and after are visible. Previous frames render with a red tint, next frames with blue, with opacity falling off by distance from the playhead.
 
-For SDF brush shapes, onion skinning is just a different color in `kiln_sdf_begin_group`. For rect/oval/line shapes, the existing shaders take a tinted color. The canvas render pass sorts by layer, then by frame distance from playhead, so onion skins always appear behind current-frame content.
+For SDF brush shapes, onion skinning is just a different color in `kiln_sdf_begin_group`. For rect, oval, and line shapes, the existing shaders take a tinted color. The canvas render pass sorts by layer, then by frame distance from playhead, so onion skins always appear behind current-frame content.
 
 ### Undo/Redo
 
@@ -173,35 +201,52 @@ Command-pattern undo with a 256-entry ring buffer covering 10 command types: cre
 
 Project files are JSON with a `.spark` extension, storing version, stage dimensions, timeline (layers, keyframes, FPS), and all shapes with their geometry, fill/stroke colors, layer/frame placement, and bezier contour data for brush paths. Loading parses the JSON and restores the full document state including undo history (cleared on new/open). Export to PPM via `glReadPixels` for frame-level output.
 
-{{< image-placeholder "Spark full workspace — brush stroke on canvas, properties panel showing shape data, timeline with keyframes and onion skin range" >}}
-
 ---
 
 ## Key Results
 
-| Metric | Value |
+| | |
 |---|---|
 | **Language** | C (C11) |
-| **Framework** | ~10,000 lines across 30+ source files |
-| **Widget types** | 30+ |
-| **Vector path engine** | ~2,130 lines (bezpath + bezbool + pathrender) |
+| **Widget types** | 30+ across buttons, inputs, containers, data displays |
+| **Vector path engine** | Bezier math, boolean ops, stencil-and-cover rendering |
 | **SDF brush pipeline** | R16F FBO, GL_MIN blend, quadratic bezier SDF |
-| **Docking system** | Binary tree, drag-and-drop, 64 max nodes |
-| **Spark** | ~3,800 lines (spark.c + spark_draw.c) |
+| **Docking system** | Binary tree, drag-and-drop, 64 max nodes, auto-clean |
 | **Drawing tools** | 6 (Select, Rect, Oval, Line, Pen, Brush) |
 | **Timeline** | 16 layers × 300 frames |
 | **Pen pressure** | SDL3 pen API, per-point radius |
 | **Undo/redo** | 256-entry ring buffer, 10 command types |
 | **Onion skinning** | Draggable range, red/blue tint, opacity falloff |
 | **Text** | FreeType, UTF-8 Unicode atlas, on-demand rasterization |
-| **Rendering** | GLES3 with custom draw callbacks |
+| **Tests** | 53 passing across bezier math, boolean ops, and bezier fitting |
 | **Build** | `cmake -B build && cmake --build build` — 0 errors, 0 warnings |
-| **Platform** | macOS, Linux, Windows |
+
+---
+
+## What I Learned
+
+**1. Bezier boolean operations are deceptively hard.** The Bezier clipping algorithm is elegant on paper, but edge cases multiply fast — tangential intersections, overlapping segments, curve-curve coincidence at endpoints, self-crossing paths with multiple intersection pairs at the same parameter. Getting all four boolean operations (union, intersect, difference, XOR) working reliably took more iteration than the rest of the vector engine combined.
+
+**2. The SDF pipeline was the right call, but I should have started there.** The stencil-and-cover renderer works and is more general, but the SDF brush renderer is faster, handles variable width for free, and makes onion skinning trivial. If I were starting over, I would build the SDF path first and only add stencil-and-cover for the cases SDF cannot handle (arbitrary filled paths with holes).
+
+**3. Clay's retained layout is the right foundation, but the imperative API is necessary.** The Clay macro API auto-closes containers, which breaks any widget that needs user content nested inside. Every complex widget — tabs, panels, menus, docking — had to switch to Clay's imperative `Clay__OpenElementWithId` / `Clay__CloseElement` API. This pattern repeated across four milestones.
+
+**4. Caller-owned state simplifies undo.** Because every widget's state lives in a struct owned by the application, undo just snapshots those structs. No framework-level undo stack, no widget state serialization, no hidden framework state that needs to be recreated.
+
+**5. SDL3's pen API is well-designed.** The SDL3 pen API (`SDL_EVENT_PEN_*`) provides position, pressure, tilt, rotation, and barrel state from any compatible tablet. The harder problem was making the brush pipeline fast enough to keep up with 120 Hz pen input while performing bezier fitting and boolean operations in real time.
+
+---
+
+## What I'd Do Differently
+
+- **Build the SDF brush renderer first.** The stencil-and-cover pipeline was the obvious first approach, but the SDF pipeline replaced most of it. The extra complexity of maintaining two parallel rendering paths is not justified.
+- **Build the dock system earlier.** Adding docking late meant retrofitting all the existing panels. If the dock had been the first container widget, everything else would have slotted into it naturally.
+- **Add stb_image from day one.** The image loading module is still a stub because adding it requires modifying the renderer and build system. Doing it early would have avoided the limitation of text-only toolbar icons.
 
 ---
 
 ## Current Status
 
-The framework is mature enough to support a professional animation tool. Spark demonstrates the full stack: a retained-mode GUI with 30+ widgets, a bezier-native vector engine with boolean operations and stencil rendering, a GPU SDF brush pipeline with GL_MIN merging, and a docking workspace — all in C with no external runtime dependencies.
+The framework is mature enough to support a professional animation tool. Spark demonstrates the full stack: a retained-mode GUI with 30+ widgets, a bezier-native vector engine with boolean operations and stencil rendering, a GPU SDF brush pipeline with GL_MIN merging, and a docking workspace — all in C with no external runtime dependencies beyond SDL3, GLES3, FreeType, and Clay.
 
 Future work includes PNG export (replacing PPM), a file dialog, multi-object selection, live property editing (number inputs update shape geometry in real time), tweening between keyframes, and sprite sheet/animated GIF export.
