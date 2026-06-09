@@ -10,7 +10,12 @@
   {{ if .Pages }}
     {{ $sorted := sort .Pages "Params.weight" "asc" }}
     {{ $featured := where $sorted "Params.featured" true }}
-    {{ $regular := where $sorted "Params.featured" "ne" true }}
+    {{ $regular := slice }}
+    {{ range $sorted }}
+      {{ if not .Params.featured }}
+        {{ $regular = $regular | append . }}
+      {{ end }}
+    {{ end }}
 
     {{ if $featured }}
       <section class="mt-8">
