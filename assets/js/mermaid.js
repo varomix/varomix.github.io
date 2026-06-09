@@ -8,7 +8,7 @@ mermaid.initialize({
   theme: "base",
   themeVariables: {
     background: "#1a1e2a",
-    primaryTextColor: "#e4e8f1",
+    primaryTextColor: "#f1f4fa",
     primaryColor: isDark ? "#6cb4ff" : "#6cb4ff",
     secondaryColor: isDark ? "#5efa9e" : "#5efa9e",
     tertiaryColor: isDark ? "#151820" : "#151820",

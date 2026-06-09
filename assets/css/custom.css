@@ -529,29 +529,18 @@ header.sticky {
   height: auto;
 }
 
-.dark .mermaid svg .label {
-  color: var(--mix-text);
-  font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,segoe ui,Roboto,helvetica neue,Arial,noto sans,sans-serif;
+/* ---- MERMAID TEXT ---- */
+.dark .mermaid-mx-text {
+  fill: #f1f4fa !important;
 }
 
-.dark .mermaid svg .cluster-label span {
-  color: var(--mix-text);
+.dark .mermaid svg text {
+  fill: #f1f4fa !important;
+  font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,segoe ui,Roboto,helvetica neue,Arial,noto sans,sans-serif;
 }
 
 .dark .mermaid svg .edgeLabel {
   background-color: var(--mix-bg-code) !important;
-}
-
-.dark .mermaid svg .noteText {
-  fill: var(--mix-text);
-}
-
-.dark .mermaid svg .actor {
-  fill: var(--mix-text);
-}
-
-.dark .mermaid svg .messageText {
-  fill: var(--mix-text);
 }
 
 
