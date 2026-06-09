@@ -26,7 +26,12 @@
       {{ . | markdownify | emojify }}
     </h2>
     {{ end }}
-    <div class="mt-1 text-2xl">
+    {{ with site.Language.Params.Author.bio }}
+    <p class="mt-4 max-w-md text-center text-base text-neutral-500 dark:text-neutral-400">
+      {{ . | markdownify | emojify }}
+    </p>
+    {{ end }}
+    <div class="mt-4 text-2xl">
       {{ partialCached "author-links.html" . }}
     </div>
   </section>
