@@ -513,18 +513,8 @@ header.sticky {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 1.5rem;
-  max-width: 896px;
 }
 
-.project-card-featured .project-card-image {
-  max-height: 400px;
-  object-fit: cover;
-}
-
-.project-card-featured .project-card-title {
-  font-size: 1.5rem;
-}
-
-.project-card-featured .project-card-desc {
-  font-size: 1rem;
+.project-card-featured {
+  border: 2px solid var(--mix-accent) !important;
 }
