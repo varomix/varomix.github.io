@@ -1,12 +1,15 @@
 {{- $src := .Get "src" -}}
 {{- $alt := .Get "alt" | default (.Get 0 | default "Add video here") -}}
+{{- $autoplay := .Get "autoplay" | default true -}}
+{{- $loop := .Get "loop" | default true -}}
 {{- if $src -}}
 <div class="my-8">
-  <video controls class="w-full rounded-xl" loading="lazy">
+  <video {{ if $autoplay }}autoplay{{ end }} {{ if $loop }}loop{{ end }} muted playsinline class="w-full rounded-xl" {{ with .Get "poster" }}poster="{{ . }}"{{ end }}>
     <source src="{{ $src }}" type="video/mp4">
-    Your browser does not support the video tag.
   </video>
-  <p class="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">{{ $alt }}</p>
+  {{- with $alt -}}
+  <p class="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">{{ . }}</p>
+  {{- end -}}
 </div>
 {{- else -}}
 <div class="my-8 rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-100 p-8 text-center dark:border-neutral-600 dark:bg-neutral-800">

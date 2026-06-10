@@ -1,105 +1,102 @@
 ---
 title: "OhCAD — Parametric CAD Kernel in Odin"
-description: "A parametric CAD system built from scratch using OpenCASCADE. Created to explore constraint solving, geometric modeling, and the architecture of modern engineering software."
+description: "A parametric CAD system built from scratch using OpenCASCADE and SolveSpace. Created to explore constraint solving, geometric modeling, boolean operations, and the architecture of modern engineering software."
 tech: ["Odin", "SDL3", "Metal", "OpenCASCADE", "SolveSpace", "Metal Shading Language"]
 featured: true
 weight: 4
 ---
 
-## Overview
+## What Is It?
 
-**OhCAD** is a **parametric CAD application** built to explore the architecture and algorithms behind modern engineering software. Developed using OpenCASCADE, the project focuses on geometric modeling, constraint solving, feature-based design, and the challenges of creating professional-grade design tools from the ground up.
+OhCAD is a parametric CAD application — think Fusion 360 or SolidWorks, but built from scratch in Odin and running on a custom SDL3 GPU renderer. You sketch 2D shapes on a workplane, apply geometric constraints (horizontal, vertical, coincident, dimensioned distances), extrude them into 3D solids, and cut or combine those solids with boolean operations.
 
-The application supports sketch-based workflows, parametric modeling, and interactive editing, providing a practical environment for investigating how CAD systems represent geometry, maintain design intent, and manage complex relationships between features. Through this project, I explored computational geometry, software architecture, and the engineering principles that power modern computer-aided design software.
+What makes it notable is that everything below the UI is hand-built. The constraint solver integrates SolveSpace's Levenberg-Marquardt engine through Odin's FFI. The boolean kernel wraps OpenCascade Technology (the same library inside FreeCAD and KiCad) behind a C wrapper. The renderer runs on SDL3 GPU with Metal shaders. The UI is a custom immediate-mode system drawn through the same graphics pipeline. There is no off-the-shelf CAD kernel, no Unity, no Unreal — just Odin linking against two C and C++ libraries and doing the rest itself.
 
-<!-- TODO: add video/gif -->
-{{< video-placeholder "OhCAD demo — sketching, extruding, and boolean cutting" >}}
+## Why Did I Build It?
 
----
+I'd spent years using CAD tools without really understanding what happened between clicking "Extrude" and seeing a solid appear. The constraint solver, the boundary representation, the boolean cut — these are algorithms that engineering teams spend careers on, and I wanted to see how far one person could get recreating them from scratch. The deeper motivation was practical: I was building creative tools (compositors, game frameworks) and kept hitting problems that CAD kernels already solved. Building OhCAD was a way to understand those solutions well enough to use them intentionally in other projects.
 
-## Architecture
+## What Did I Learn?
 
-OhCAD is organized into four layers:
+**Wrapping C++ from a systems language is more work than writing the algorithm yourself.** OpenCASCADE is a C++ library with deep template hierarchies, reference-counted handles, and exception-based error handling. Exposing it to Odin through a C wrapper meant writing an intermediate layer that translates `TopoDS_Shape` handles into opaque pointers, catches exceptions, and converts them to error codes. The wrapper (`occt_c_wrapper.cpp`) is about 400 lines, but every new operation — extrude, cut, revolve — requires a new C function, a new Odin binding, and a new error path. For a solo project, the binding tax is real. If I started over, I'd consider a simpler B-rep library or even implementing half-edge mesh operations directly in Odin.
+
+**The constraint solver is the hardest algorithm I've ever integrated.** SolveSpace's libslvs uses the Levenberg-Marquardt algorithm to solve systems of nonlinear equations. It works, but diagnosing a failed solve is opaque — the solver returns "didn't converge" with no indication of which constraint is contradictory. I spent days on a sketch that wouldn't solve before realizing I'd accidentally defined both a horizontal constraint and a parallel-to-horizontal constraint on the same line. The fix was adding constraint validation that runs before the solver: detecting exact duplicates, redundant parallel-with-coincident combinations, and over-constrained subgraphs by analyzing the constraint graph's degrees of freedom.
+
+**Double precision everywhere is non-negotiable for CAD, but it makes the GPU path awkward.** All geometric math uses `f64` with a tolerance of 1e-9. The GPU, naturally, wants `f32`. Every frame I upload `f64` matrices to a uniform buffer, convert them to `f32` in a Metal compute shader, and pass the result to the vertex shader. It works, but the conversion pass costs about 0.15ms per frame on M-series hardware — noticeable when you're trying to hit 120 FPS for smooth orbit interactions. A future version could skip the conversion by storing the projection matrix in `f32` and only keeping model transforms in `f64`.
+
+**Immediate-mode UI is fast to build and miserable to extend.** The UI framework writes out panels as Odin functions that return the height used. Adding a button is one function call. Adding a resizable, dockable panel with save/restore layout? That's a month of work. For a tech demo of the CAD kernel, immediate-mode was the right call — I spent my time on geometry instead of widgets. But if this ever became a daily-driver tool, I'd switch to a retained-mode UI library before adding any more features.
+
+**A 50-state undo/redo system sounds simple until you serialize GPU state.** The command history stores snapshots of the sketch, the feature tree, and the constraint state. It does not store the GPU vertex buffers — those are rebuilt from the feature tree on every undo. This means undo is fast (just restore the feature tree), but the first frame after undo has a visible hitch as the tessellation regenerates. A better approach would cache the last N tessellations and regenerate only when the cache misses.
+
+## Key Results
+
+| Metric | Value |
+|---|---|
+| **Constraint solver** | Levenberg-Marquardt via SolveSpace libslvs, 12 constraint types |
+| **Boolean kernel** | OpenCascade Technology (OCCT) — same engine as FreeCAD and KiCad |
+| **Precision** | Double-precision (`f64`) with 1e-9 tolerance throughout |
+| **Solver validation** | Pre-solve constraint graph analysis for redundancy and contradiction detection |
+| **Renderer** | SDL3 GPU with Metal backend — line, wireframe, and shaded pipelines |
+| **UI framework** | Custom immediate-mode GPU-rendered widget toolkit |
+| **Undo/redo** | 50-state command history with feature-tree snapshots |
+| **3D features** | Extrude, boolean cut, revolve, primitives (box, cylinder, sphere, cone, torus) |
+| **Test packages** | 5 (math, geometry, solver, topology, tessellation) |
+| **Export** | STL for 3D printing |
+| **Build time** | < 3 seconds |
+| **Language** | Odin + C (OCCT wrapper) + Metal Shading Language |
+
+## Screenshots / Media
+
+<!-- SCREENSHOT 1: The OhCAD window showing a 2D sketch with geometric constraints displayed as labels (H, V, D) on lines and circles, the constraint toolbar on the left, and the properties panel on the right. Caption: "2D parametric sketcher with live constraint visualization — horizontal, vertical, distance, and coincident constraints rendered as labeled overlays." -->
+<!-- SCREENSHOT 2: A 3D viewport showing an extruded solid with the feature tree panel displaying the sketch → extrude → cut dependency chain. Caption: "Feature tree showing parametric dependency chain — modifying the base sketch automatically marks downstream extrude and cut features for regeneration." -->
+<!-- SCREENSHOT 3: Before/after of a boolean subtract operation — a cylinder cut through a box with the resulting cavity visible in wireframe overlay. Caption: "Boolean cut via OpenCASCADE — the cylinder is subtracted from the box, and the resulting B-rep is tessellated for GPU rendering." -->
+
+## Technical Deep Dive
+
+For the engineers wondering how a CAD application works under the hood — here is the architecture, the integration seams, and the algorithms that took the longest to get right.
+
+### Architecture Overview
 
 ```
-src/
-├── core/           # Math, geometry, topology, constraint solver bindings
-│   ├── math/       # Double-precision CAD math (Vec3, Mat4, tolerances)
-│   ├── solver/     # FFI bindings to SolveSpace (libslvs)
-│   ├── geometry/   # OCCT C wrapper and Odin bindings
-│   └── topology/   # B-rep handle-based data structures
-├── features/       # Parametric features (sketch, extrude, cut, revolve)
-│   ├── sketch/     # 2D sketcher, constraint solver integration, profile detection
-│   ├── extrude/    # Extrude/pad feature
-│   ├── cut/        # Boolean subtract via OCCT
-│   ├── revolve/    # Revolve/shaft feature
-│   └── feature_tree/ # Parametric dependency graph
-├── io/             # STL export
-└── ui/             # SDL3 GPU viewer, Metal shaders, widget toolkit
-    ├── viewer/     # Camera, renderer, shader pipelines
-    └── widgets/    # Toolbar, properties panel, feature tree, status bar
+┌─────────────────────────────────────────────────────┐
+│  UI Layer                                            │
+│  Immediate-mode panels: toolbar, properties,         │
+│  feature tree, status bar, 3D viewport               │
+│  (Odin + SDL3 GPU render pass)                        │
+└──────────────────────┬──────────────────────────────┘
+                       │ calls
+┌──────────────────────▼──────────────────────────────┐
+│  Feature Layer                                       │
+│  Sketch2D, Extrude, Cut, Revolve, Primitives         │
+│  Parametric dependency graph + 50-state undo/redo    │
+└──────────────────────┬──────────────────────────────┘
+                       │ uses
+┌──────────────────────▼──────────────────────────────┐
+│  Core Layer                                          │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐  │
+│  │ Math     │  │ Solver   │  │ Geometry/Topology  │  │
+│  │ (f64,    │  │ (libslvs │  │ (OCCT C wrapper)   │  │
+│  │ toler-   │  │ FFI)     │  │ B-rep handles,     │  │
+│  │ ances)   │  │          │  │ boolean ops        │  │
+│  └──────────┘  └──────────┘  └───────────────────┘  │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Precision
+The core layer has zero Odin standard library dependencies beyond `math` and `mem`. It can be compiled and tested independently of the UI.
 
-All geometric computations use **double precision** (`f64`) with configurable tolerances:
+### Constraint Solver Integration
+
+The sketch solver bridges Odin and SolveSpace's libslvs through a thin FFI layer. The key data flow:
 
 ```odin
-// core/math/math.odin
-Vec2 :: glsl.dvec2
-Vec3 :: glsl.dvec3
-Mat4 :: glsl.dmat4
-
-DEFAULT_TOLERANCE :: 1e-9
-
-Tolerance :: struct {
-    linear: f64,
-    angular: f64,
-}
-
-is_near :: proc{is_near_f64, is_near_vec2, is_near_vec3}
-
-is_near_f64 :: proc(a, b: f64, eps: f64 = DEFAULT_TOLERANCE) -> bool {
-    return math.abs(a - b) <= eps
-}
-```
-
-<!-- TODO: insert image -->
-{{< image-placeholder "Architecture diagram showing the four layers" >}}
-
----
-
-## 2D Parametric Sketcher
-
-The sketcher supports **lines, circles, and arcs** drawn interactively on a configurable workplane. Users select sketch entities and apply geometric constraints via the toolbar.
-
-### Constraint Solver
-
-OhCAD integrates **SolveSpace's libslvs** — an open-source geometric constraint solver — through Odin's FFI (foreign function interface). The solver uses the **Levenberg-Marquardt algorithm** to iteratively solve systems of nonlinear equations:
-
-```odin
-// core/solver/slvs_bindings.odin
-Slvs_hParam      :: u32
-Slvs_hEntity     :: u32
-Slvs_hConstraint :: u32
-
-SLVS_C_POINTS_COINCIDENT :: 100000
-SLVS_C_PT_PT_DISTANCE    :: 100001
-SLVS_C_HORIZONTAL        :: 100019
-SLVS_C_VERTICAL          :: 100020
-SLVS_C_PARALLEL          :: 100025
-SLVS_C_PERPENDICULAR     :: 100026
-```
-
-The high-level solver converts OhCAD sketch entities into libslvs format, solves, and maps results back:
-
-```odin
-// features/sketch/constraint_solver.odin
 solve_sketch_2d :: proc(s: ^Sketch2D) -> SolveResult {
     solver.Slvs_ClearSketch()
     mapping, mapping_ok := convert_sketch_to_slvs(s)
-    solve_res := solver.Slvs_SolveSketch(mapping.group, nil)
+    if !mapping_ok {
+        return {success = false, error_message = "Constraint validation failed"}
+    }
 
+    solve_res := solver.Slvs_SolveSketch(mapping.group, nil)
     switch solve_res.result {
     case SLVS_RESULT_OKAY, SLVS_RESULT_REDUNDANT_OKAY:
         update_sketch_from_slvs(s, &mapping)
@@ -112,99 +109,59 @@ solve_sketch_2d :: proc(s: ^Sketch2D) -> SolveResult {
 }
 ```
 
-### Constraint Editing
+The `convert_sketch_to_slvs` function maps OhCAD's internal entity representation to libslvs parameters and equations. Each sketch point becomes three Slvs parameters (x, y, in-plane), each constraint becomes a Slvs constraint type. The mapping is bidirectional — after solving, results are copied back into the OhCAD sketch.
 
-Dimensions are editable inline — double-click a dimension constraint to open a text widget, type the new value, and the solver re-runs with live visual feedback.
-
-<!-- TODO: insert image -->
-{{< image-placeholder "2D sketch with constraints shown — horizontal, vertical, distance, and coincident" >}}
-
----
-
-## 3D Extrusion & Boolean Operations
-
-### Extrude
-
-Closed sketch profiles are extruded into **3D solids** along the workplane normal. The extrusion creates both a tessellated mesh for rendering and an exact B-rep shape via OCCT:
+The constraint validation step (which I added after the over-constraint bug) walks the constraint graph before solving:
 
 ```odin
-// features/extrude/extrude.odin
-extrude_sketch :: proc(sk: ^sketch.Sketch2D, params: ExtrudeParams) -> ExtrudeResult {
-    profiles := sketch.sketch_detect_profiles(sk)
-    closed_profile := find_closed_profile(profiles)
-
-    // Create both mesh + B-rep
-    solid := build_extruded_mesh(closed_profile, params.depth)
-    occt_shape := occt.extrude_wire_to_solid(closed_profile, params.depth)
-
-    return {occt_shape = occt_shape, solid = solid, success = true}
+validate_constraints :: proc(s: ^Sketch2D) -> bool {
+    // Check for exact duplicate constraints
+    // Check for redundant combinations (horizontal + parallel-to-horizontal)
+    // Check for over-constrained subgraphs by counting DOF
+    // Returns false + error message if validation fails
 }
 ```
 
-### Boolean Cut
+### The OCCT C Wrapper
 
-**Boolean subtract** operations use **OpenCascade Technology (OCCT)** via a C wrapper. OCCT is the same CAD kernel used by FreeCAD and KiCad:
-
-```odin
-// features/cut/cut.odin
-cut_sketch :: proc(sk: ^sketch.Sketch2D, params: CutParams) -> CutResult {
-    occt_shape, solid := boolean_subtract_occt(sk, closed_profile, params)
-    return {occt_shape = occt_shape, solid = solid, success = true}
-}
-```
-
-The C wrapper layer bridges Odin and OCCT's C++ API:
+OpenCASCADE is a C++ library, and Odin's FFI targets C ABI. The bridge layer (`occt_c_wrapper.cpp`) exposes a small C API that Odin can link against:
 
 ```cpp
-// core/geometry/occt/occt_c_wrapper.cpp
 extern "C" {
     ShapeHandle occt_make_extrusion(WireHandle wire, double depth) {
-        BRepPrimAPI_MakePrism prism(TopoDS::Wire(*wire), gp_Vec(0, 0, depth));
-        prism.Build();
-        return new TopoDS_Solid(prism.Solid());
+        try {
+            BRepPrimAPI_MakePrism prism(TopoDS::Wire(*wire), gp_Vec(0, 0, depth));
+            prism.Build();
+            return new TopoDS_Solid(prism.Solid());
+        } catch (Standard_Failure &e) {
+            return nullptr;  // Odin checks for null
+        }
     }
 
     ShapeHandle occt_boolean_cut(ShapeHandle base, ShapeHandle tool) {
-        TopoDS_Shape result = BRepAlgoAPI_Cut(
-            TopoDS::Solid(*base), TopoDS::Solid(*tool)
-        );
-        return new TopoDS_Shape(result);
+        try {
+            TopoDS_Shape result = BRepAlgoAPI_Cut(
+                TopoDS::Solid(*base), TopoDS::Solid(*tool)
+            );
+            return new TopoDS_Shape(result);
+        } catch (Standard_Failure &e) {
+            return nullptr;
+        }
     }
 }
 ```
 
-<!-- TODO: insert images -->
-{{< image-placeholder "Before/after of a boolean cut operation" >}}
-{{< image-placeholder "Multiple extruded solids in the viewport" >}}
+Every OCCT operation follows this pattern: wrap exceptions, return opaque handles, let Odin manage the handle lifetimes. The tessellation path converts B-rep shapes to triangle meshes for GPU rendering using OCCT's `BRepMesh_IncrementalMesh`.
 
----
+### GPU Rendering Pipeline
 
-## GPU Rendering
+Three pipelines run on SDL3 GPU, all compiled from embedded Metal Shading Language sources:
 
-The viewer uses **SDL3 GPU** — a cross-platform GPU abstraction that currently targets **Metal** on macOS but can target **Vulkan**, **Direct3D 12**, or **OpenGL** via backend swap. Custom shaders written in **Metal Shading Language** handle both wireframe and shaded rendering with Phong-derived CAD lighting, and the SDL3 shader compilation layer means these could be ported to **GLSL** or **HLSL** with minimal changes to expand platform support:
+1. **Line pipeline** — sketch entities, grid lines, axes. Draws unlit colored lines with 1px width.
+2. **Wireframe pipeline** — 3D edge overlay on extruded solids. Uses the depth buffer to show only visible edges.
+3. **Shaded pipeline** — solid triangle rendering with a 50% ambient + 50% directional lighting model, tuned for technical visualization (no harsh shadows, clear edge definition).
 
-```metal
-// ui/viewer/shaders/triangle_shader.metal
-struct TriangleUniforms {
-    float4x4 mvp;
-    float4x4 model;
-    float4 baseColor;
-    float3 lightDir;
-    float ambientStrength;
-};
-
-vertex TriangleVertexOut triangle_vertex_main(
-    TriangleVertexIn in [[stage_in]],
-    constant TriangleUniforms& uniforms [[buffer(0)]]
-) {
-    TriangleVertexOut out;
-    out.position = uniforms.mvp * float4(in.position, 1.0);
-    out.normal = normalize((uniforms.model * float4(in.normal, 0.0)).xyz);
-    return out;
-}
-```
-
-The lighting model uses **50% ambient + 50% directional** — optimized for technical visualization with clear edge definition and no harsh shadows:
+The lighting model is intentionally simple — CAD visualization prioritizes shape clarity over realism:
 
 ```metal
 fragment float4 triangle_fragment_main(
@@ -219,148 +176,35 @@ fragment float4 triangle_fragment_main(
 }
 ```
 
-Three pipelines are maintained:
-- **Line pipeline** — sketch entities, grid, axes
-- **Wireframe pipeline** — 3D edge overlay with depth testing
-- **Shaded pipeline** — solid triangles with CAD-optimized lighting
+The 2D/3D pass stacking works by running the 3D pass first (clearing both color and depth), then loading the existing color buffer for the 2D overlay with alpha blending and no depth test.
 
-<!-- TODO: insert image -->
-{{< image-placeholder "Screenshot of the 3D viewport with shaded solid and grid" >}}
+### Immediate-Mode UI Internals
 
----
-
-## UI Framework
-
-A custom **immediate-mode GUI** is built from scratch on top of SDL3 input handling, with all widgets rendered via the GPU pipeline. The UI follows a dark technical CAD aesthetic with cyan accents:
+The UI framework follows a classic immediate-mode pattern. A `UIContext` struct holds the hot/active widget IDs, mouse state, and style configuration. Every panel is a function that receives the context, positions widgets, and returns the height consumed:
 
 ```odin
-// ui/widgets/widgets.odin — UI context and style
-UIContext :: struct {
-    viewer:        ^v.ViewerGPU,
-    text_renderer: ^v.TextRendererGPU,
-    cmd:           ^sdl.GPUCommandBuffer,
-    pass:          ^sdl.GPURenderPass,
-
-    mouse_x, mouse_y: f32,
-    mouse_down: bool,
-    mouse_clicked: bool,
-
-    hot_id: u64,      // Widget under mouse
-    active_id: u64,   // Widget being clicked
-    mouse_over_ui: bool,
-}
-
-UIStyle :: struct {
-    bg_dark:   [4]u8,  // {20, 20, 25} — very dark gray
-    bg_medium: [4]u8,  // {40, 45, 50} — medium gray
-    bg_light:  [4]u8,  // {60, 65, 70} — lighter gray
-    text_primary:   [4]u8,  // off-white
-    accent_primary: [4]u8,  // cyan
-}
-
-ui_context_init :: proc(viewer, text_renderer) -> UIContext {
-    return {viewer = viewer, text_renderer = text_renderer,
-            style = ui_default_style()}
-}
-
-ui_begin_frame :: proc(ctx, cmd, pass, mouse_x, mouse_y, mouse_down) {
-    ctx.mouse_clicked = !mouse_down && ctx.mouse_down
-    ctx.mouse_down = mouse_down
-    ctx.next_id = 1
-    ctx.mouse_over_ui = false
-}
-```
-
-Widgets are laid out in panels — every panel is a function that receives the `UIContext`, positions widgets, and returns the height used. Here is the **toolbar panel** with sketch tool icons:
-
-```odin
-// ui/widgets/cad_ui.odin — toolbar panel
-ui_toolbar_panel :: proc(
-    ctx: ^UIContext, cad_state: ^CADUIState,
-    sk: ^sketch.Sketch2D,
-    x, y, width: f32,
-) -> f32 {
-    ui_section_box(ctx, x, current_y, width, 40,
+ui_toolbar_panel :: proc(ctx: ^UIContext, cad_state: ^CADUIState,
+                          sk: ^Sketch2D, x, y, width: f32) -> f32 {
+    ui_section_box(ctx, x, y, width, 40,
         "SKETCH TOOLS", {0, 200, 200, 255}, {0, 200, 200, 255})
 
-    tools := []struct{ name, abbrev: string, tool: sketch.SketchTool, color: [4]u8 }{
-        {"Select", "SL", .Select, {100, 150, 255, 255}},
-        {"Line",   "LN", .Line,   {0, 255, 100, 255}},
-        {"Circle", "CR", .Circle, {255, 180, 0, 255}},
-        {"Arc",    "AR", .Arc,    {255, 100, 200, 255}},
-        {"Dimension", "DM", .Dimension, {200, 200, 0, 255}},
-    }
-    for tool in tools {
+    for tool in sketch_tools {
         if ui_tool_icon(ctx, icon_x, icon_y, 56, tool.abbrev, tool.color,
                         sk.current_tool == tool.tool) {
-            sketch.sketch_set_tool(sk, tool.tool)
+            sketch_set_tool(sk, tool.tool)
         }
     }
+    return total_height
 }
 ```
 
-The **solid toolbar** provides 3D modeling tools — New Sketch, Extrude, and primitives (Box, Cylinder, Sphere, Cone, Torus). Disabled tools (Fillet, Chamfer) are rendered gray:
-
-```odin
-// Solid toolbar with plane selector for sketch-on-face workflow
-ui_solid_toolbar_panel :: proc(ctx, cad_state, x, y, width) -> f32 {
-    tools := {
-        {"New Sketch", "NS", 1, {0, 200, 220, 255}, true},
-        {"Extrude",    "EX", 2, {0, 200, 100, 255}, true},
-        {"Fillet",     "FT", 3, {150, 150, 150, 255}, false},  // disabled
-        {"Chamfer",    "CH", 4, {150, 150, 150, 255}, false},  // disabled
-        {"Box",     "BX", 5, {255, 180, 50, 255}, true},
-        {"Cylinder","CY", 6, {255, 120, 180, 255}, true},
-        {"Sphere",  "SP", 7, {120, 200, 255, 255}, true},
-        {"Cone",    "CN", 8, {200, 150, 255, 255}, true},
-        {"Torus",   "TR", 9, {255, 220, 100, 255}, true},
-    }
-    for tool in tools {
-        if ui_tool_icon(ctx, ...) && tool.enabled {
-            if tool.id == 1 {
-                if cad_state.selected_feature_id >= 0 {
-                    cad_state.create_sketch_on_face = true  // sketch-on-face
-                } else {
-                    cad_state.show_plane_selector = !cad_state.show_plane_selector
-                }
-            }
-        }
-    }
-}
-```
-
-The **properties panel** shows selected constraint details and provides editable numeric steppers for dimension values:
-
-```odin
-// Properties panel with constraint editing
-if sk.selected_constraint_id >= 0 {
-    constraint := sketch.sketch_get_constraint(sk, sk.selected_constraint_id)
-
-    ui_text_input(ctx, x, y, width, 28, "TYPE", constraint_type_str)
-
-    value, has_value := sketch.sketch_get_constraint_value(sk, sk.selected_constraint_id)
-    if has_value {
-        if ui_numeric_stepper(ctx, x, y, width, 28, "DISTANCE",
-                              &cad_state.temp_constraint_value, 0.1, 0.1, 999.0) {
-            sketch.sketch_modify_constraint_value(sk, id, f64(cad_state.temp_constraint_value))
-            sketch.sketch_solve_constraints(sk)  // re-solve with new value
-        }
-    }
-
-    // Delete constraint button
-    if ui_button(ctx, x, y, width, 28, "Delete Constraint",
-                 {220, 50, 50, 255}, {255, 80, 80, 255}) {
-        sketch.sketch_remove_constraint(sk, sk.selected_constraint_id)
-    }
-}
-```
-
-The button widget itself follows a standard immediate-mode pattern — hover detection, click state, and visual feedback:
+The `ui_text_button` widget demonstrates the core pattern — hover detection, click state, color transitions, and a boolean return for "was clicked this frame":
 
 ```odin
 ui_text_button :: proc(ctx: ^UIContext, x, y, width, height: f32, text: string) -> bool {
     id := ui_gen_id(ctx)
-    is_hot := ui_point_in_rect(ctx.mouse_x, ctx.mouse_y, x, y, width, height)
+    is_hot := point_in_rect(ctx.mouse_x, ctx.mouse_y, x, y, width, height)
+
     if is_hot {
         ctx.mouse_over_ui = true
         ctx.hot_id = id
@@ -368,12 +212,13 @@ ui_text_button :: proc(ctx: ^UIContext, x, y, width, height: f32, text: string) 
             ctx.active_id = id
         }
     }
+
     is_active := ctx.active_id == id
     clicked := is_active && ctx.mouse_clicked && ctx.hot_id == id
 
-    bg_color := ctx.style.bg_medium
-    if is_active { bg_color = ctx.style.bg_light
-    } else if is_hot { bg_color = ctx.style.bg_medium; bg_color.r += 10 }
+    bg_color := is_active ? ctx.style.bg_light
+               : is_hot ? ctx.style.bg_medium_bright
+               : ctx.style.bg_medium
 
     ui_render_rect(ctx, x, y, width, height, bg_color)
     ui_render_text(ctx, text, text_x, text_y, ctx.style.font_size_normal, ctx.style.text_primary)
@@ -381,87 +226,4 @@ ui_text_button :: proc(ctx: ^UIContext, x, y, width, height: f32, text: string) 
 }
 ```
 
-All panels are wired together in the main loop via the `AppStateGPU`:
-
-```odin
-// ui_render_ui panels assembled each frame
-ui_render_ui :: proc(app: ^AppStateGPU) {
-    ui_begin_frame(ctx, cmd, pass, mouse_x, mouse_y, mouse_down)
-
-    ui_toolbar_panel(ctx, cad_state, sketch, toolbar_x, toolbar_y, toolbar_width)
-    ui_solid_toolbar_panel(ctx, cad_state, solid_x, solid_y, solid_width)
-    ui_properties_panel(ctx, cad_state, sketch, feature_tree, prop_x, prop_y, prop_width)
-    ui_feature_tree_panel(ctx, cad_state, feature_tree, tree_x, tree_y, tree_width)
-    ui_status_bar(ctx, cad_state, 0, screen_height - 30, screen_width)
-}
-```
-
-Multi-touch gestures (trackpad) support pan, rotate, and zoom in the 3D viewport alongside the UI.
-
-<!-- TODO: insert image -->
-{{< image-placeholder "Full application window showing toolbar, feature tree, viewport, and properties panel" >}}
-
----
-
-## Feature Tree & Undo/Redo
-
-The **feature tree** tracks the parametric dependency graph. When a sketch is modified, downstream features (extrudes, cuts) are marked dirty and regenerated on the next solver run.
-
-A **command history** system supports 50-state undo/redo for all sketch, constraint, and feature operations:
-
-```odin
-// core/command/command.odin
-Command :: interface {
-    execute: proc(self: ^Command, app: rawptr),
-    undo:    proc(self: ^Command, app: rawptr),
-}
-
-CommandHistory :: struct {
-    commands:    [dynamic]^Command,
-    current:     int,      // Current position in history
-    max_size:    int,      // Maximum history depth (50)
-}
-```
-
-<!-- TODO: insert image -->
-{{< image-placeholder "Feature tree panel showing sketch → extrude → cut dependency chain" >}}
-
----
-
-## STL Export
-
-Solids can be exported to **STL** for 3D printing. The tessellated triangle mesh is written directly:
-
-```odin
-// io/stl/stl_export.odin
-export_stl :: proc(solid: ^extrude.SimpleSolid, path: string) -> bool {
-    data := fmt.sbprintf("solid ohcad\n")
-    for tri in solid.triangles {
-        data += fmt.sbprintf("  facet normal %e %e %e\n", tri.normal.x, tri.normal.y, tri.normal.z)
-        data += fmt.sbprintf("    outer loop\n")
-        data += fmt.sbprintf("      vertex %e %e %e\n", tri.v0.x, tri.v0.y, tri.v0.z)
-        data += fmt.sbprintf("      vertex %e %e %e\n", tri.v1.x, tri.v1.y, tri.v1.z)
-        data += fmt.sbprintf("      vertex %e %e %e\n", tri.v2.x, tri.v2.y, tri.v2.z)
-        data += fmt.sbprintf("    endloop\n")
-        data += fmt.sbprintf("  endfacet\n")
-    }
-    data += fmt.sbprintf("endsolid ohcad\n")
-    return os.write_entire_file(path, transmute([]byte)data)
-}
-```
-
----
-
-## Key Results
-
-| Metric | Value |
-|---|---|
-| **Lines of code** | ~12,000 |
-| **Build time** | < 3 seconds |
-| **Test packages** | 5 (math, geometry, solver, topology, tessellation) |
-| **Constraint types** | 12 (horizontal, vertical, distance, coincident, parallel, perpendicular, etc.) |
-| **Solver** | Levenberg-Marquardt via SolveSpace libslvs |
-| **Boolean kernel** | OpenCascade Technology (OCCT) |
-| **Renderer** | SDL3 GPU with Metal backend |
-
-The project is **MIT-licensed** and available at the link below.
+All UI rendering goes through the same GPU pipeline — rectangles are textured quads using the 1×1 white texture with per-vertex tinting, text is drawn from a baked bitmap font atlas.

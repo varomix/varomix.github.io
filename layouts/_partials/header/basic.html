@@ -16,3 +16,25 @@
     </div>
   </nav>
 </header>
+
+<script>
+  (function(){
+    var el = document.getElementById('nav-title');
+    if (!el) return;
+    var hero = document.querySelector('.hero-top');
+    var threshold = hero ? Math.max(hero.offsetHeight * 0.25, 80) : 120;
+    var shown = false;
+
+    function check() {
+      var should = window.scrollY > threshold;
+      if (should === shown) return;
+      shown = should;
+      el.animate(
+        [{ opacity: should ? '0' : '1' }, { opacity: should ? '1' : '0' }],
+        { duration: 350, easing: 'ease', fill: 'forwards' }
+      );
+    }
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+  })();
+</script>

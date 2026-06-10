@@ -6,14 +6,13 @@
     <header>
       <a
         href="/#projects"
-        class="mb-6 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-        style="text-decoration: none;"
+        class="btn-back"
       >&larr; Back to Projects</a>
       <h1 class="mt-2 mb-6 text-4xl font-extrabold text-neutral-900 dark:text-neutral">
         {{ .Title | emojify }}
       </h1>
       {{ with .Params.description }}
-        <p class="mb-4 text-lg text-neutral-500 dark:text-neutral-400">{{ . }}</p>
+        <p class="mb-8 text-lg text-neutral-500 dark:text-neutral-400">{{ . }}</p>
       {{ end }}
       {{ with .Params.tech }}
         <div class="mb-6 flex flex-wrap gap-2">
